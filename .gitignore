@@ -1,2 +1,12 @@
 .worktrees/
 .superpowers/
+node_modules/
+.local-bin/
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
