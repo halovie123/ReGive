@@ -46,6 +46,55 @@ describe('UI primitives', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('traps forward and backward Tab navigation inside an open dialog', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Dialog
+        open
+        onOpenChange={() => undefined}
+        title="Xác nhận liên hệ"
+      >
+        <Button>Tiếp tục</Button>
+      </Dialog>,
+    );
+
+    const closeButton = screen.getByRole('button', { name: 'Đóng hộp thoại' });
+    const continueButton = screen.getByRole('button', { name: 'Tiếp tục' });
+    expect(closeButton).toHaveFocus();
+
+    await user.tab();
+    expect(continueButton).toHaveFocus();
+    await user.tab();
+    expect(closeButton).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(continueButton).toHaveFocus();
+  });
+
+  it('restores focus to the opener when the dialog closes', async () => {
+    const user = userEvent.setup();
+
+    function TriggeredExample() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <Button onClick={() => setOpen(true)}>Mở hộp thoại</Button>
+          <Dialog open={open} onOpenChange={setOpen} title="Xác nhận liên hệ">
+            <Button>Tiếp tục</Button>
+          </Dialog>
+        </>
+      );
+    }
+
+    render(<TriggeredExample />);
+    const opener = screen.getByRole('button', { name: 'Mở hộp thoại' });
+    await user.click(opener);
+    expect(screen.getByRole('button', { name: 'Đóng hộp thoại' })).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(opener).toHaveFocus();
+  });
+
   it.each([
     ['loading', 'Đang tải nội dung'],
     ['empty', 'Chưa có món đồ nào'],
