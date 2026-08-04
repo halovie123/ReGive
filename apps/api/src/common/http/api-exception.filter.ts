@@ -17,20 +17,13 @@ const BAD_REQUEST_STATUS: number = HttpStatus.BAD_REQUEST;
 const UNAUTHORIZED_STATUS: number = HttpStatus.UNAUTHORIZED;
 const FORBIDDEN_STATUS: number = HttpStatus.FORBIDDEN;
 const NOT_FOUND_STATUS: number = HttpStatus.NOT_FOUND;
+const CONFLICT_STATUS: number = HttpStatus.CONFLICT;
+const UNPROCESSABLE_ENTITY_STATUS: number = HttpStatus.UNPROCESSABLE_ENTITY;
 const INTERNAL_SERVER_ERROR_STATUS: number = HttpStatus.INTERNAL_SERVER_ERROR;
-
-type HttpExceptionBody = {
-  code?: unknown;
-  message?: unknown;
-  details?: unknown;
-};
 
 type ErrorLogger = {
   error(message: unknown): void;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const clientMessageForStatus = (status: number): string => {
   if (status >= INTERNAL_SERVER_ERROR_STATUS) return INTERNAL_MESSAGE;
@@ -39,6 +32,8 @@ const clientMessageForStatus = (status: number): string => {
   if (status === FORBIDDEN_STATUS)
     return 'Bạn không có quyền thực hiện thao tác này.';
   if (status === NOT_FOUND_STATUS) return 'Không tìm thấy tài nguyên.';
+  if (status === CONFLICT_STATUS) return 'Dữ liệu bị xung đột.';
+  if (status === UNPROCESSABLE_ENTITY_STATUS) return 'Dữ liệu không hợp lệ';
   return 'Không thể xử lý yêu cầu.';
 };
 
@@ -46,12 +41,15 @@ const codeForStatus = (status: number): string =>
   HttpStatus[status] ?? 'HTTP_ERROR';
 
 const incomingCorrelationId = (request: Request): string => {
-  const candidate =
-    request.headers[CORRELATION_HEADER] ?? request.headers['x-request-id'];
+  const candidate = [
+    request.headers[CORRELATION_HEADER],
+    request.headers['x-request-id'],
+  ].find(
+    (value): value is string =>
+      typeof value === 'string' && SAFE_CORRELATION_ID.test(value),
+  );
 
-  return typeof candidate === 'string' && SAFE_CORRELATION_ID.test(candidate)
-    ? candidate
-    : randomUUID();
+  return candidate ?? randomUUID();
 };
 
 @Catch()
@@ -69,25 +67,11 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const status = isHttpException
       ? exception.getStatus()
       : INTERNAL_SERVER_ERROR_STATUS;
-    const exceptionBody: HttpExceptionBody = isHttpException
-      ? this.readHttpExceptionBody(exception)
-      : {};
 
     const problem: ApiProblem = {
-      code:
-        typeof exceptionBody.code === 'string' && exceptionBody.code.length > 0
-          ? exceptionBody.code
-          : codeForStatus(status),
-      message:
-        status < INTERNAL_SERVER_ERROR_STATUS &&
-        typeof exceptionBody.message === 'string' &&
-        exceptionBody.message.length > 0
-          ? exceptionBody.message
-          : clientMessageForStatus(status),
+      code: codeForStatus(status),
+      message: clientMessageForStatus(status),
       correlationId,
-      ...(exceptionBody.details === undefined
-        ? {}
-        : { details: exceptionBody.details }),
     };
 
     if (status >= INTERNAL_SERVER_ERROR_STATUS) {
@@ -102,18 +86,5 @@ export class ApiExceptionFilter implements ExceptionFilter {
 
     response.setHeader(CORRELATION_HEADER, correlationId);
     response.status(status).json(problem);
-  }
-
-  private readHttpExceptionBody(exception: HttpException): HttpExceptionBody {
-    const body = exception.getResponse();
-
-    if (typeof body === 'string') return { message: body };
-    if (!isRecord(body)) return {};
-
-    return {
-      code: body.code,
-      message: body.message,
-      details: body.details,
-    };
   }
 }

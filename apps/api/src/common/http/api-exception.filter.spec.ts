@@ -15,12 +15,43 @@ class FailureController {
   safeFailure(): never {
     throw new HttpException(
       {
-        code: 'INVALID_INPUT',
-        message: 'Dữ liệu không hợp lệ',
-        details: { field: 'displayName' },
-        internal: 'must-not-leak',
+        code: 'INVALID_INPUT_PASSWORD_LEAK',
+        message: 'database password=must-not-leak',
+        details: {
+          field: 'displayName',
+          stack: 'must-not-leak-stack',
+          secret: 'must-not-leak-secret',
+          internal: { query: 'must-not-leak-query' },
+        },
       },
       422,
+    );
+  }
+
+  @Get('server-http')
+  serverHttpFailure(): never {
+    throw new HttpException(
+      {
+        code: 'DATABASE_PASSWORD_LEAK',
+        message: 'database password=must-not-leak',
+        details: {
+          stack: 'must-not-leak-stack',
+          secret: 'must-not-leak-secret',
+        },
+      },
+      503,
+    );
+  }
+
+  @Get('conflict')
+  conflictFailure(): never {
+    throw new HttpException(
+      {
+        code: 'INTERNAL_CONFLICT_CODE',
+        message: 'internal conflict details must-not-leak',
+        details: { secret: 'must-not-leak-secret' },
+      },
+      409,
     );
   }
 
@@ -47,7 +78,7 @@ describe('ApiExceptionFilter', () => {
     await app.close();
   });
 
-  it('preserves a safe HTTP status and response while reusing a valid correlation ID', async () => {
+  it('uses a status-derived public problem for an arbitrary 4xx body', async () => {
     const response = await request(app.getHttpServer())
       .get('/failures/safe')
       .set('x-correlation-id', 'request-123')
@@ -55,12 +86,62 @@ describe('ApiExceptionFilter', () => {
 
     expect(response.headers['x-correlation-id']).toBe('request-123');
     expect(response.body).toEqual({
-      code: 'INVALID_INPUT',
+      code: 'UNPROCESSABLE_ENTITY',
       message: 'Dữ liệu không hợp lệ',
       correlationId: 'request-123',
-      details: { field: 'displayName' },
     });
     expect(JSON.stringify(response.body)).not.toContain('must-not-leak');
+  });
+
+  it('uses a generic public problem for an HttpException with a 5xx status', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/failures/server-http')
+      .set('x-correlation-id', 'request-503')
+      .expect(503);
+
+    expect(response.body).toEqual({
+      code: 'SERVICE_UNAVAILABLE',
+      message: 'Đã xảy ra lỗi. Vui lòng thử lại sau.',
+      correlationId: 'request-503',
+    });
+    expect(JSON.stringify(response.body)).not.toContain('DATABASE_PASSWORD');
+    expect(JSON.stringify(response.body)).not.toContain('must-not-leak');
+    expect(JSON.stringify(response.body)).not.toContain('details');
+  });
+
+  it('uses a safe status-derived problem for a conflict response', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/failures/conflict')
+      .set('x-correlation-id', 'request-409')
+      .expect(409);
+
+    expect(response.body).toEqual({
+      code: 'CONFLICT',
+      message: 'Dữ liệu bị xung đột.',
+      correlationId: 'request-409',
+    });
+    expect(JSON.stringify(response.body)).not.toContain('must-not-leak');
+  });
+
+  it('reuses a valid request ID when no correlation ID is provided', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/failures/safe')
+      .set('x-request-id', 'request-fallback')
+      .expect(422);
+
+    expect(response.headers['x-correlation-id']).toBe('request-fallback');
+    expect(response.body).toMatchObject({ correlationId: 'request-fallback' });
+  });
+
+  it('falls back to a valid request ID when the correlation ID is malformed', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/failures/safe')
+      .set('x-correlation-id', 'unsafe id with spaces')
+      .set('x-request-id', 'request-fallback')
+      .expect(422);
+
+    expect(response.headers['x-correlation-id']).toBe('request-fallback');
+    expect(response.body).toMatchObject({ correlationId: 'request-fallback' });
   });
 
   it('generates a correlation ID and hides unexpected exception details', async () => {
