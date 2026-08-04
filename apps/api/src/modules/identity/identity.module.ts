@@ -13,7 +13,9 @@ import {
 } from './supabase-identity.verifier';
 import {
   ADMIN_FETCH,
+  ADMIN_REQUEST_SIGNAL_FACTORY,
   type AdminFetch,
+  defaultAdminRequestSignalFactory,
   SupabaseUserAdmin,
 } from './supabase-user-admin';
 import { VerifiedPhoneGuard } from './verified-phone.guard';
@@ -38,6 +40,10 @@ const adminFetch: AdminFetch = (url, init) => globalThis.fetch(url, init);
     {
       provide: ADMIN_FETCH,
       useValue: adminFetch,
+    },
+    {
+      provide: ADMIN_REQUEST_SIGNAL_FACTORY,
+      useValue: defaultAdminRequestSignalFactory,
     },
     { provide: IDENTITY_USER_STORE, useExisting: PrismaService },
   ],

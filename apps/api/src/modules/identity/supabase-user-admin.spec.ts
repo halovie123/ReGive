@@ -48,7 +48,7 @@ describe('SupabaseUserAdmin', () => {
     expect(capturedInit?.signal?.aborted).toBe(false);
   });
 
-  it('bounds Admin requests and maps abort failures without leaking details', async () => {
+  it('maps Admin abort failures without leaking details', async () => {
     let suppliedSignal: AbortSignal | null | undefined;
     const adapter = new SupabaseUserAdmin(config, (_url, init) => {
       suppliedSignal = init.signal;
@@ -64,6 +64,51 @@ describe('SupabaseUserAdmin', () => {
     await expect(adapter.getUser('subject-1')).rejects.not.toThrow(
       'must-not-leak',
     );
+  });
+
+  it('aborts a pending Admin request through the bounded timeout policy', async () => {
+    const timeoutController = new AbortController();
+    let requestedTimeout: number | undefined;
+    const adminFetch: AdminFetch = (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener(
+          'abort',
+          () =>
+            reject(
+              new DOMException(
+                'raw timeout detail must-not-leak',
+                'AbortError',
+              ),
+            ),
+          { once: true },
+        );
+      });
+    const adapter = Reflect.construct(SupabaseUserAdmin, [
+      config,
+      adminFetch,
+      (timeoutMs: number) => {
+        requestedTimeout = timeoutMs;
+        return timeoutController.signal;
+      },
+    ]);
+
+    const outcome = adapter.getUser('subject-1').then(
+      () => 'unexpected-success',
+      (error: Error) => error.message,
+    );
+    timeoutController.abort(
+      new DOMException('raw timeout detail must-not-leak', 'TimeoutError'),
+    );
+
+    await expect(
+      Promise.race([
+        outcome,
+        new Promise<string>((resolve) =>
+          setImmediate(() => resolve('request-still-pending')),
+        ),
+      ]),
+    ).resolves.toBe('Identity provider is unavailable');
+    expect(requestedTimeout).toBe(5_000);
   });
 
   it.each([
