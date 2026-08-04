@@ -1,6 +1,8 @@
 import { envSchema } from './env.schema';
 
 const validEnvironment = {
+  NODE_ENV: 'test',
+  ALLOW_INSECURE_SUPABASE_HTTP: 'false',
   DATABASE_URL: 'postgresql://regive:password@localhost:5432/regive',
   REDIS_URL: 'redis://localhost:6379',
   SUPABASE_URL: 'https://project.supabase.co',
@@ -29,6 +31,72 @@ describe('envSchema', () => {
     expect(() =>
       envSchema.parse({ ...validEnvironment, SUPABASE_URL: 'not-a-url' }),
     ).toThrow('SUPABASE_URL');
+  });
+
+  it.each(['SUPABASE_URL', 'SUPABASE_JWKS_URL'] as const)(
+    'rejects insecure production %s even when non-production opt-in is set',
+    (key) => {
+      expect(() =>
+        envSchema.parse({
+          ...validEnvironment,
+          NODE_ENV: 'production',
+          ALLOW_INSECURE_SUPABASE_HTTP: 'true',
+          [key]:
+            key === 'SUPABASE_URL'
+              ? 'http://project.supabase.local'
+              : 'http://project.supabase.local/auth/v1/.well-known/jwks.json',
+        }),
+      ).toThrow(key);
+    },
+  );
+
+  it('rejects insecure non-production Supabase transport by default', () => {
+    const environment = { ...validEnvironment };
+    delete (environment as Partial<typeof validEnvironment>)
+      .ALLOW_INSECURE_SUPABASE_HTTP;
+
+    expect(() =>
+      envSchema.parse({
+        ...environment,
+        SUPABASE_URL: 'http://project.supabase.local',
+      }),
+    ).toThrow('SUPABASE_URL');
+  });
+
+  it('allows explicit insecure Supabase transport only outside production', () => {
+    expect(
+      envSchema.parse({
+        ...validEnvironment,
+        ALLOW_INSECURE_SUPABASE_HTTP: 'true',
+        SUPABASE_URL: 'http://project.supabase.local',
+        SUPABASE_JWKS_URL:
+          'http://project.supabase.local/auth/v1/.well-known/jwks.json',
+      }),
+    ).toMatchObject({
+      ALLOW_INSECURE_SUPABASE_HTTP: 'true',
+      SUPABASE_URL: 'http://project.supabase.local',
+      SUPABASE_JWKS_URL:
+        'http://project.supabase.local/auth/v1/.well-known/jwks.json',
+    });
+  });
+
+  it('strictly validates the insecure transport opt-in', () => {
+    expect(() =>
+      envSchema.parse({
+        ...validEnvironment,
+        ALLOW_INSECURE_SUPABASE_HTTP: 'TRUE',
+      }),
+    ).toThrow('ALLOW_INSECURE_SUPABASE_HTTP');
+  });
+
+  it('rejects enabling the insecure transport opt-in in production', () => {
+    expect(() =>
+      envSchema.parse({
+        ...validEnvironment,
+        NODE_ENV: 'production',
+        ALLOW_INSECURE_SUPABASE_HTTP: 'true',
+      }),
+    ).toThrow('ALLOW_INSECURE_SUPABASE_HTTP');
   });
 
   it('rejects a whitespace-only secret', () => {

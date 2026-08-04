@@ -110,6 +110,28 @@ describe('IdentityController syncPhone', () => {
     });
   });
 
+  it.each([
+    '+84 (912) 345-678',
+    '+84 (912 345-678',
+    '+84 912--345-678',
+    '+84- 912-345-678',
+    '+84 912-345-678-',
+    '+ 84 912 345 678',
+    '+84.912.345.678',
+  ])('rejects ambiguous phone separators in %s', async (phone) => {
+    const { controller, getUpdateData } = createController({
+      subject: 'subject-1',
+      phone,
+      phoneConfirmedAt: new Date('2026-08-04T10:00:00.000Z'),
+    });
+
+    await expect(controller.syncPhone(currentUser)).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'PHONE_INVALID' },
+    });
+    expect(getUpdateData()).toBeUndefined();
+  });
+
   it('normalizes, encrypts and stores only safe phone metadata', async () => {
     const fullPhone = '+84 912-345-678';
     const { controller, getUpdateData } = createController({

@@ -22,7 +22,8 @@ export type SyncPhoneResponse = {
 };
 
 const normalizePhone = (phone: string): string | null => {
-  const normalized = phone.replace(/[\s().-]/g, '');
+  if (!/^\+[0-9]+(?:[ -][0-9]+)*$/.test(phone)) return null;
+  const normalized = phone.replace(/[ -]/g, '');
   return /^\+[0-9]{8,15}$/.test(normalized) ? normalized : null;
 };
 

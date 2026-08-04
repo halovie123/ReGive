@@ -24,7 +24,11 @@ const urlWithProtocol = (...protocols: string[]) =>
     },
   );
 
-export const envSchema = z.object({
+const baseEnvSchema = z.object({
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
+  ALLOW_INSECURE_SUPABASE_HTTP: z.enum(['true', 'false']).default('false'),
   DATABASE_URL: urlWithProtocol('postgres:', 'postgresql:'),
   REDIS_URL: urlWithProtocol('redis:', 'rediss:'),
   SUPABASE_URL: urlWithProtocol('http:', 'https:'),
@@ -32,6 +36,34 @@ export const envSchema = z.object({
   SUPABASE_ANON_KEY: nonBlankString,
   SUPABASE_SERVICE_ROLE_KEY: nonBlankString,
   PII_ENCRYPTION_KEY_V1: encryptionKey,
+});
+
+export const envSchema = baseEnvSchema.superRefine((environment, context) => {
+  const production = environment.NODE_ENV === 'production';
+  const insecureOptIn = environment.ALLOW_INSECURE_SUPABASE_HTTP === 'true';
+  const insecureTransportAllowed = !production && insecureOptIn;
+
+  if (production && insecureOptIn) {
+    context.addIssue({
+      code: 'custom',
+      path: ['ALLOW_INSECURE_SUPABASE_HTTP'],
+      message: 'ALLOW_INSECURE_SUPABASE_HTTP cannot be enabled in production',
+    });
+  }
+
+  for (const key of ['SUPABASE_URL', 'SUPABASE_JWKS_URL'] as const) {
+    if (
+      URL.canParse(environment[key]) &&
+      new URL(environment[key]).protocol === 'http:' &&
+      !insecureTransportAllowed
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: [key],
+        message: `${key} must use https unless explicitly enabled outside production`,
+      });
+    }
+  }
 });
 
 export type Environment = z.infer<typeof envSchema>;

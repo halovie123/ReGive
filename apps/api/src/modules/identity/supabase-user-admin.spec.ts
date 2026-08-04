@@ -37,13 +37,33 @@ describe('SupabaseUserAdmin', () => {
     expect(capturedUrl).toBe(
       'https://trusted-project.supabase.co/auth/v1/admin/users/subject-1',
     );
-    expect(capturedInit).toEqual({
+    expect(capturedInit).toMatchObject({
       method: 'GET',
       headers: {
         apikey: 'test-service-role-key',
         authorization: 'Bearer test-service-role-key',
       },
     });
+    expect(capturedInit?.signal).toBeInstanceOf(AbortSignal);
+    expect(capturedInit?.signal?.aborted).toBe(false);
+  });
+
+  it('bounds Admin requests and maps abort failures without leaking details', async () => {
+    let suppliedSignal: AbortSignal | null | undefined;
+    const adapter = new SupabaseUserAdmin(config, (_url, init) => {
+      suppliedSignal = init.signal;
+      return Promise.reject(
+        new DOMException('raw timeout detail must-not-leak', 'AbortError'),
+      );
+    });
+
+    await expect(adapter.getUser('subject-1')).rejects.toThrow(
+      'Identity provider is unavailable',
+    );
+    expect(suppliedSignal).toBeInstanceOf(AbortSignal);
+    await expect(adapter.getUser('subject-1')).rejects.not.toThrow(
+      'must-not-leak',
+    );
   });
 
   it.each([

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 export const ADMIN_FETCH = Symbol('ADMIN_FETCH');
+export const ADMIN_REQUEST_TIMEOUT_MS = 5_000;
 export type AdminFetch = (url: string, init: RequestInit) => Promise<Response>;
 
 export type AdminIdentityUser = {
@@ -41,6 +42,7 @@ export class SupabaseUserAdmin {
             apikey: this.serviceRoleKey,
             authorization: `Bearer ${this.serviceRoleKey}`,
           },
+          signal: AbortSignal.timeout(ADMIN_REQUEST_TIMEOUT_MS),
         },
       );
       if (!response.ok) throw new Error('Admin endpoint rejected request');
