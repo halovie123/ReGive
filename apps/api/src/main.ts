@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { resolveApiPort } from './api-port';
 import { envSchema } from './common/config/env.schema';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
+import { IdentityModule } from './modules/identity/identity.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
       validate: (configuration) => envSchema.parse(configuration),
     }),
     AppModule,
+    IdentityModule,
   ],
 })
 class BootstrapModule {}

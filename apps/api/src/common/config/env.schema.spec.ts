@@ -8,7 +8,7 @@ const validEnvironment = {
     'https://project.supabase.co/auth/v1/.well-known/jwks.json',
   SUPABASE_ANON_KEY: 'anon-key-for-tests',
   SUPABASE_SERVICE_ROLE_KEY: 'service-role-key-for-tests',
-  PII_ENCRYPTION_KEY_V1: 'encryption-key-for-tests',
+  PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 5).toString('base64'),
 };
 
 describe('envSchema', () => {
@@ -38,6 +38,15 @@ describe('envSchema', () => {
         SUPABASE_SERVICE_ROLE_KEY: '   ',
       }),
     ).toThrow('SUPABASE_SERVICE_ROLE_KEY');
+  });
+
+  it('names an encryption key that does not decode to 32 bytes', () => {
+    expect(() =>
+      envSchema.parse({
+        ...validEnvironment,
+        PII_ENCRYPTION_KEY_V1: Buffer.alloc(31, 5).toString('base64'),
+      }),
+    ).toThrow('PII_ENCRYPTION_KEY_V1');
   });
 
   it.each([

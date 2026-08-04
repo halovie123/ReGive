@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
+import { PublicApiException } from './public-api.exception';
 
 const CORRELATION_HEADER = 'x-correlation-id';
 const SAFE_CORRELATION_ID = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -68,9 +69,13 @@ export class ApiExceptionFilter implements ExceptionFilter {
       ? exception.getStatus()
       : INTERNAL_SERVER_ERROR_STATUS;
 
+    const publicProblem =
+      exception instanceof PublicApiException
+        ? exception.publicProblem
+        : undefined;
     const problem: ApiProblem = {
-      code: codeForStatus(status),
-      message: clientMessageForStatus(status),
+      code: publicProblem?.code ?? codeForStatus(status),
+      message: publicProblem?.message ?? clientMessageForStatus(status),
       correlationId,
     };
 

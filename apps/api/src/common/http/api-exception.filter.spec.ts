@@ -8,6 +8,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { ApiExceptionFilter } from './api-exception.filter';
+import { PublicApiException } from './public-api.exception';
 
 @Controller('failures')
 class FailureController {
@@ -58,6 +59,15 @@ class FailureController {
   @Get('unexpected')
   unexpectedFailure(): never {
     throw new Error('database password=must-not-leak');
+  }
+
+  @Get('public-phone-verification')
+  publicPhoneVerificationFailure(): never {
+    throw new PublicApiException(
+      403,
+      'PHONE_NOT_VERIFIED',
+      'A confirmed phone number is required.',
+    );
   }
 }
 
@@ -160,5 +170,18 @@ describe('ApiExceptionFilter', () => {
     });
     expect(JSON.stringify(response.body)).not.toContain('password');
     expect(JSON.stringify(response.body)).not.toContain('stack');
+  });
+
+  it('preserves only an explicitly allowlisted public problem code', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/failures/public-phone-verification')
+      .set('x-correlation-id', 'request-phone')
+      .expect(403);
+
+    expect(response.body).toEqual({
+      code: 'PHONE_NOT_VERIFIED',
+      message: 'A confirmed phone number is required.',
+      correlationId: 'request-phone',
+    });
   });
 });

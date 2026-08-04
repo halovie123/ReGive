@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+
+  @@map("user_status")
+}
+
+enum AppRole {
+  DONOR
+  RECIPIENT
+  VOLUNTEER
+
+  @@map("app_role")
+}
+
+enum AreaCode {
+  HOC_MON
+  BA_DIEM
+  XUAN_THOI_SON
+  DONG_THANH
+
+  @@map("area_code")
+}
+
+model User {
+  id                        String           @id @default(uuid()) @db.Uuid
+  providerSubject           String           @unique @map("provider_subject")
+  encryptedPhone            String?          @map("encrypted_phone")
+  phoneLast4                String?          @map("phone_last4") @db.VarChar(4)
+  phoneVerifiedAt           DateTime?        @map("phone_verified_at") @db.Timestamptz(3)
+  phoneEncryptionKeyVersion Int?             @map("phone_encryption_key_version")
+  status                    UserStatus       @default(ACTIVE)
+  activeRole                AppRole?         @map("active_role")
+  createdAt                 DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  roleAssignments           RoleAssignment[]
+
+  @@index([status])
+  @@map("users")
+}
+
+model RoleAssignment {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      AppRole
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([role])
+  @@map("user_role_assignments")
+}
+
+model Area {
+  code      AreaCode @id
+  nameVi    String   @map("name_vi")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([active])
+  @@map("areas")
+}
