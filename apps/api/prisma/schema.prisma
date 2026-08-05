@@ -43,6 +43,8 @@ model User {
   createdAt                 DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt                 DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
   roleAssignments           RoleAssignment[]
+  profile                   Profile?
+  areaAssignments           UserArea[]
 
   @@index([status])
   @@map("users")
@@ -66,7 +68,34 @@ model Area {
   active    Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userAreas UserArea[]
 
   @@index([active])
   @@map("areas")
+}
+
+model Profile {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @map("user_id") @db.Uuid
+  displayName String   @map("display_name") @db.VarChar(80)
+  bio         String   @default("") @db.VarChar(300)
+  avatarKey   String?  @map("avatar_key")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model UserArea {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  areaCode  AreaCode @map("area_code")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area      Area     @relation(fields: [areaCode], references: [code], onDelete: Restrict)
+
+  @@unique([userId, areaCode])
+  @@index([areaCode])
+  @@map("user_areas")
 }

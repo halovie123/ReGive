@@ -5,7 +5,10 @@ export type PublicProblemCode =
   | 'PHONE_NOT_VERIFIED'
   | 'PHONE_NOT_CONFIRMED'
   | 'PHONE_INVALID'
-  | 'IDENTITY_PROVIDER_UNAVAILABLE';
+  | 'IDENTITY_PROVIDER_UNAVAILABLE'
+  | 'INVALID_INPUT'
+  | 'ROLE_NOT_ASSIGNED'
+  | 'AREA_UNAVAILABLE';
 
 export type PublicProblem = {
   code: PublicProblemCode;

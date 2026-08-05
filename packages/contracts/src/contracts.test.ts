@@ -4,6 +4,10 @@ import {
   ApiProblemSchema,
   AreaCodeSchema,
   IdentityClaimsSchema,
+  MeResponseSchema,
+  UpdateAreasSchema,
+  UpdateProfileSchema,
+  UpdateRolesSchema,
   UserRoleSchema,
 } from './index.js';
 
@@ -62,5 +66,50 @@ describe('shared contracts', () => {
     expect(
       IdentityClaimsSchema?.safeParse({ subject: 'user-1' }).success,
     ).toBe(false);
+  });
+
+  it('normalizes a valid profile update and defaults the optional bio', () => {
+    expect(
+      UpdateProfileSchema.parse({ displayName: '  Linh  ' }),
+    ).toEqual({ displayName: 'Linh', bio: '' });
+  });
+
+  it('rejects an invalid onboarding role or area request', () => {
+    expect(UpdateRolesSchema.safeParse({ roles: ['ADMIN'] }).success).toBe(
+      false,
+    );
+    expect(
+      UpdateAreasSchema.safeParse({ areas: ['DISTRICT_1'] }).success,
+    ).toBe(false);
+  });
+
+  it('publishes a safe, complete current-user response', () => {
+    expect(
+      MeResponseSchema.parse({
+        id: '6d29e5a2-12b9-4e91-9d2e-06a4b6d63915',
+        phoneVerified: false,
+        phoneLast4: null,
+        profile: {
+          displayName: 'Linh',
+          bio: 'Chia sẻ đồ dùng',
+          avatarKey: null,
+        },
+        roles: ['DONOR'],
+        activeRole: 'DONOR',
+        areas: ['HOC_MON'],
+      }),
+    ).toEqual({
+      id: '6d29e5a2-12b9-4e91-9d2e-06a4b6d63915',
+      phoneVerified: false,
+      phoneLast4: null,
+      profile: {
+        displayName: 'Linh',
+        bio: 'Chia sẻ đồ dùng',
+        avatarKey: null,
+      },
+      roles: ['DONOR'],
+      activeRole: 'DONOR',
+      areas: ['HOC_MON'],
+    });
   });
 });

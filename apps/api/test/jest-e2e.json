@@ -1,9 +1,16 @@
 {
+  "rootDir": "../../..",
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      { "tsconfig": "<rootDir>/apps/api/tsconfig.spec.json" }
+    ]
+  },
+  "moduleNameMapper": {
+    "^@buy-nothing/contracts$": "<rootDir>/packages/contracts/src/index.ts",
+    "^(\\.{1,2}/.*)\\.js$": "$1"
   }
 }
