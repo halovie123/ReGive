@@ -17,6 +17,7 @@ type StoredUser = {
 
 class MemoryProfilesDatabase {
   readonly users = new Map<string, StoredUser>();
+  failNextUserRead = false;
   readonly areas = new Map<AreaCode, boolean>([
     ['HOC_MON', true],
     ['BA_DIEM', false],
@@ -37,8 +38,13 @@ class MemoryProfilesDatabase {
   }
 
   readonly user = {
-    findUniqueOrThrow: ({ where: { id } }: { where: { id: string } }) =>
-      Promise.resolve(this.serialize(this.userFor(id))),
+    findUniqueOrThrow: ({ where: { id } }: { where: { id: string } }) => {
+      if (this.failNextUserRead) {
+        this.failNextUserRead = false;
+        return Promise.reject(new Error('Injected response read failure'));
+      }
+      return Promise.resolve(this.serialize(this.userFor(id)));
+    },
     update: ({
       where: { id },
       data,
@@ -128,8 +134,41 @@ class MemoryProfilesDatabase {
     },
   };
 
-  $transaction = <T>(operation: (transaction: this) => Promise<T>) =>
-    operation(this);
+  $queryRaw = (
+    query: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<unknown[]> => {
+    if (query.join('?').includes('FROM "areas"')) {
+      const areaCode = values[0] as AreaCode;
+      return Promise.resolve(
+        this.areas.get(areaCode) === true ? [{ code: areaCode }] : [],
+      );
+    }
+    return Promise.resolve([{ id: values[0] }]);
+  };
+
+  $transaction = async <T>(
+    operation: (transaction: this) => Promise<T>,
+  ): Promise<T> => {
+    const snapshot = new Map(
+      [...this.users].map(([id, user]) => [
+        id,
+        {
+          ...user,
+          profile: user.profile ? { ...user.profile } : null,
+          roles: new Set(user.roles),
+          areas: new Set(user.areas),
+        },
+      ]),
+    );
+    try {
+      return await operation(this);
+    } catch (error) {
+      this.users.clear();
+      snapshot.forEach((user, id) => this.users.set(id, user));
+      throw error;
+    }
+  };
 
   private userFor(id: string): StoredUser {
     const user = this.users.get(id);
@@ -202,6 +241,20 @@ describe('ProfilesService', () => {
     ).rejects.toMatchObject({
       status: 422,
       response: { code: 'ROLE_NOT_ASSIGNED' },
+    });
+  });
+
+  it('rolls back an active-role change when completing its response fails', async () => {
+    database.users.get('user-1')!.roles.add('VOLUNTEER');
+    database.failNextUserRead = true;
+
+    await expect(
+      service.updateActiveRole('user-1', 'VOLUNTEER'),
+    ).rejects.toThrow('Injected response read failure');
+
+    await expect(service.getMe('user-1')).resolves.toMatchObject({
+      activeRole: 'DONOR',
+      roles: ['DONOR', 'VOLUNTEER'],
     });
   });
 

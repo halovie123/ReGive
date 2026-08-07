@@ -31,6 +31,7 @@ export class ProfilesService {
   async updateRoles(userId: string, roles: AppRole[]): Promise<MeResponse> {
     const uniqueRoles = [...new Set(roles)];
     return this.prisma.$transaction(async (transaction) => {
+      await this.lockUserMutation(userId, transaction);
       await transaction.roleAssignment.deleteMany({ where: { userId } });
       await transaction.roleAssignment.createMany({
         data: uniqueRoles.map((role) => ({ userId, role })),
@@ -54,38 +55,32 @@ export class ProfilesService {
     userId: string,
     activeRole: AppRole,
   ): Promise<MeResponse> {
-    const assignment = await this.prisma.roleAssignment.findUnique({
-      where: { userId_role: { userId, role: activeRole } },
-      select: { role: true },
+    return this.prisma.$transaction(async (transaction) => {
+      await this.lockUserMutation(userId, transaction);
+      const assignment = await transaction.roleAssignment.findUnique({
+        where: { userId_role: { userId, role: activeRole } },
+        select: { role: true },
+      });
+      if (!assignment) {
+        throw new PublicApiException(
+          HttpStatus.UNPROCESSABLE_ENTITY,
+          'ROLE_NOT_ASSIGNED',
+          'Vai trò đang chọn chưa được đăng ký.',
+        );
+      }
+      await transaction.user.update({
+        where: { id: userId },
+        data: { activeRole },
+      });
+      return this.meResponse(userId, transaction);
     });
-    if (!assignment) {
-      throw new PublicApiException(
-        HttpStatus.UNPROCESSABLE_ENTITY,
-        'ROLE_NOT_ASSIGNED',
-        'Vai trò đang chọn chưa được đăng ký.',
-      );
-    }
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { activeRole },
-    });
-    return this.meResponse(userId, this.prisma);
   }
 
   async updateAreas(userId: string, areas: AreaCode[]): Promise<MeResponse> {
     const uniqueAreas = [...new Set(areas)];
     return this.prisma.$transaction(async (transaction) => {
-      const activeAreas = await transaction.area.findMany({
-        where: { code: { in: uniqueAreas }, active: true },
-        select: { code: true },
-      });
-      if (activeAreas.length !== uniqueAreas.length) {
-        throw new PublicApiException(
-          HttpStatus.UNPROCESSABLE_ENTITY,
-          'AREA_UNAVAILABLE',
-          'Khu vực không khả dụng.',
-        );
-      }
+      await this.lockUserMutation(userId, transaction);
+      await this.lockActiveAreas(uniqueAreas, transaction);
       await transaction.userArea.deleteMany({ where: { userId } });
       await transaction.userArea.createMany({
         data: uniqueAreas.map((areaCode) => ({ userId, areaCode })),
@@ -93,6 +88,40 @@ export class ProfilesService {
       });
       return this.meResponse(userId, transaction);
     });
+  }
+
+  private async lockUserMutation(
+    userId: string,
+    transaction: Prisma.TransactionClient,
+  ): Promise<void> {
+    await transaction.$queryRaw`
+      SELECT "id"
+      FROM "users"
+      WHERE "id" = ${userId}::uuid
+      FOR UPDATE
+    `;
+  }
+
+  private async lockActiveAreas(
+    areas: AreaCode[],
+    transaction: Prisma.TransactionClient,
+  ): Promise<void> {
+    for (const areaCode of [...areas].sort()) {
+      const activeAreas = await transaction.$queryRaw<{ code: AreaCode }[]>`
+        SELECT "code"
+        FROM "areas"
+        WHERE "code" = ${areaCode}::"area_code"
+          AND "active" = true
+        FOR UPDATE
+      `;
+      if (activeAreas.length !== 1) {
+        throw new PublicApiException(
+          HttpStatus.UNPROCESSABLE_ENTITY,
+          'AREA_UNAVAILABLE',
+          'Khu vực không khả dụng.',
+        );
+      }
+    }
   }
 
   private async meResponse(

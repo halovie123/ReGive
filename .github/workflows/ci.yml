@@ -44,7 +44,7 @@ jobs:
         run: pnpm --filter api exec prisma migrate deploy
         env:
           DATABASE_URL: postgresql://regive:regive@127.0.0.1:5432/regive_identity_ci
-      - name: Verify database-backed identity provisioning
+      - name: Verify database-backed identity and profile invariants
         run: pnpm --filter api test:e2e:db
         env:
           RUN_DATABASE_TESTS: "true"
