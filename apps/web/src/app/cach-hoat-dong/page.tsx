@@ -30,9 +30,11 @@ export default function HowItWorksPage() {
 
           <h2>2. Kết nối</h2>
           <p>
-            Người nhận quan tâm sẽ nhắn tin trực tiếp trong ReGive để hỏi thêm thông tin
-            và thống nhất thời gian, địa điểm trao nhận. Tình nguyện viên có thể hỗ trợ
-            kết nối hoặc vận chuyển khi cần.
+            Những người quan tâm nhắn tin hỏi thêm thông tin trực tiếp trong ReGive.
+            Người tặng xem qua và tự chọn người nhận phù hợp — ReGive không dùng cơ
+            chế &quot;ai đến trước được trước&quot;. Sau khi chọn xong, hai bên thống nhất
+            thời gian, địa điểm trao nhận; tình nguyện viên có thể hỗ trợ vận chuyển
+            khi cần.
           </p>
 
           <h2>3. Trao và nhận</h2>
@@ -51,7 +53,7 @@ export default function HowItWorksPage() {
           <ul>
             <li><strong>Người tặng</strong> — chia sẻ món đồ không còn dùng đến.</li>
             <li><strong>Người nhận</strong> — tìm món đồ mình đang cần.</li>
-            <li><strong>Tình nguyện viên</strong> — hỗ trợ kết nối và vận chuyển trong khu vực.</li>
+            <li><strong>Tình nguyện viên</strong> — hỗ trợ vận chuyển món đồ trong khu vực.</li>
           </ul>
           <p>Một tài khoản có thể đảm nhận nhiều vai trò cùng lúc.</p>
         </div>

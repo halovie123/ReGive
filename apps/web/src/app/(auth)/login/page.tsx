@@ -5,6 +5,7 @@ import type { MeResponse } from '@buy-nothing/contracts';
 import { BrandLockup } from '@/components/brand/brand-lockup';
 import { LoginForm } from '@/features/auth/login-form';
 import { safeGetMe } from '@/lib/api/server-fetch';
+import { nextOnboardingStep } from '@/lib/onboarding-step';
 import { supabaseAnonKey, supabaseUrl } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import '@/styles/regive-app.css';
@@ -36,11 +37,7 @@ export default async function LoginPage() {
 
   // Already signed in: send returning users straight to the right step
   // instead of showing the login screen again.
-  if (me) {
-    if (!me.phoneVerified) redirect('/onboarding/phone');
-    if (!me.profile) redirect('/onboarding/profile');
-    redirect('/trang-chu');
-  }
+  if (me) redirect(nextOnboardingStep(me));
 
   return (
     <main className="auth-page">

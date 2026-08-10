@@ -23,8 +23,8 @@ const ROLE_CONTENT: Record<UserRole, RoleContent> = {
   },
   VOLUNTEER: {
     eyebrow: 'Tình nguyện viên',
-    title: 'Hỗ trợ kết nối trong khu vực của bạn',
-    cta: 'Xem nhiệm vụ hỗ trợ',
+    title: 'Hỗ trợ vận chuyển trong khu vực của bạn',
+    cta: 'Xem đơn cần vận chuyển',
     href: '/kham-pha',
   },
 };

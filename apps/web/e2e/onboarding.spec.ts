@@ -79,6 +79,41 @@ test.describe('public routing', () => {
 
 const RUN_LIVE_AUTH = process.env.RUN_E2E_LIVE_AUTH === 'true';
 
+/**
+ * These three scenarios stay as fixme stubs deliberately, not just for lack
+ * of a live Supabase project.
+ *
+ * The routing *decision* each one exercises — "unverified phone ->
+ * /onboarding/phone", "phoneVerified + profile !== null -> /trang-chu" —
+ * is now a single pure function, lib/onboarding-step.ts's
+ * nextOnboardingStep(), used by every guard in the app (login page, both
+ * onboarding pages, the app shell layout, and completeSignInRedirect).
+ * That function has exhaustive unit coverage of exactly these cases,
+ * including the two named here, in tests/lib/onboarding-step.test.tsx —
+ * that is what regresses if this logic ever drifts again, which is the
+ * actual failure mode Fix round 1 finding 7 was about.
+ *
+ * Turning these into genuine browser-level Playwright tests (as opposed
+ * to that unit coverage) means getting a real signed-in session in front
+ * of a running `next dev` server. We looked at faking it — cookie
+ * @supabase/ssr will accept — and it is not a small mock: the session
+ * cookie's value is base64url-encoded and gets *chunked* across multiple
+ * cookies once the payload is large enough (see
+ * @supabase/ssr/dist/module/utils/chunker.js), and `supabase.auth.getUser()`
+ * (which proxy.ts and every guard call, deliberately, instead of the
+ * cookie-only `getSession()`, so a stale/forged cookie can't grant access)
+ * does not just decode that cookie — it makes a live revalidation request
+ * to `${NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`. A faithful fake would mean
+ * standing up a small stand-in Supabase Auth + our own API server, wiring
+ * their ports into the Playwright webServer's env, and keeping that in
+ * sync with whatever GoTrueClient does next. That's real infrastructure,
+ * not a quick mock, and it duplicates coverage the unit test already
+ * gives more precisely and far more cheaply. So: left as fixme, same as
+ * "global sign-out revokes provider sessions", which needs the same live
+ * OAuth + API/DB stack for a different reason (there is no fake to build
+ * here — it is inherently an integration behavior, revoking real
+ * refresh tokens against a real Supabase project).
+ */
 test.describe('live auth flows', () => {
   test.skip(
     !RUN_LIVE_AUTH,

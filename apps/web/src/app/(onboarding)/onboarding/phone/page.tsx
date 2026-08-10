@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { StatusState } from '@/components/ui/status-state';
 import { PhoneForm } from '@/features/onboarding/phone-form';
 import { safeGetMe } from '@/lib/api/server-fetch';
+import { nextOnboardingStep } from '@/lib/onboarding-step';
 import { createClient } from '@/lib/supabase/server';
 import '@/styles/regive-app.css';
 
@@ -25,8 +26,8 @@ export default async function OnboardingPhonePage({ searchParams }: PageProps) {
 
   const me = await safeGetMe();
   if (me) {
-    if (me.phoneVerified && !me.profile) redirect('/onboarding/profile');
-    if (me.phoneVerified && me.profile) redirect('/trang-chu');
+    const destination = nextOnboardingStep(me);
+    if (destination !== '/onboarding/phone') redirect(destination);
   }
 
   return (

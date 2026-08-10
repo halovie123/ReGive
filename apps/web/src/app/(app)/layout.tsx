@@ -4,8 +4,11 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { USER_ROLES, type UserRole } from '@buy-nothing/contracts';
 import { BrandLockup } from '@/components/brand/brand-lockup';
+import { StatusState } from '@/components/ui/status-state';
+import { signOutEverywhere } from '@/features/auth/auth-actions';
 import { apiFetch, safeGetMe } from '@/lib/api/server-fetch';
 import { ROLE_LABELS } from '@/lib/labels';
+import { nextOnboardingStep } from '@/lib/onboarding-step';
 import { createClient } from '@/lib/supabase/server';
 import '@/styles/regive-app.css';
 
@@ -42,9 +45,42 @@ export default async function AppLayout({
   if (!user) redirect('/login');
 
   const me = await safeGetMe();
-  if (!me) redirect('/login');
-  if (!me.phoneVerified) redirect('/onboarding/phone');
-  if (!me.profile) redirect('/onboarding/profile');
+
+  if (!me) {
+    // The Supabase session is valid but /v1/me couldn't be reached (API
+    // down, DB down, JWT secret mismatch, etc). Do NOT redirect('/login')
+    // here: proxy.ts sends any signed-in user straight back to
+    // /trang-chu, which would land right back in this branch forever
+    // (see task-5-report.md, Fix round 1, finding 1). Render an in-place
+    // error state instead, with a sign-out escape hatch that only talks
+    // to Supabase (not our API), so the user is never stuck.
+    return (
+      <div className="app-shell">
+        <header className="app-header">
+          <div className="app-header-row">
+            <span className="brand-link" aria-hidden="true">
+              <BrandLockup compact />
+            </span>
+          </div>
+        </header>
+        <main className="app-main">
+          <StatusState
+            state="error"
+            message="Không thể tải thông tin tài khoản"
+            description="Máy chủ hiện không phản hồi. Vui lòng thử lại sau ít phút, hoặc đăng xuất và đăng nhập lại."
+          />
+          <form action={signOutEverywhere}>
+            <button type="submit" className="ui-button ui-button-secondary">
+              Đăng xuất
+            </button>
+          </form>
+        </main>
+      </div>
+    );
+  }
+
+  const destination = nextOnboardingStep(me);
+  if (destination !== '/trang-chu') redirect(destination);
 
   return (
     <div className="app-shell">

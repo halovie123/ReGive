@@ -89,10 +89,14 @@ export async function submitOnboardingProfile(
   }
 
   try {
-    await apiFetch('/me/profile', {
-      method: 'PUT',
-      body: JSON.stringify(profile.data),
-    });
+    // Order matters: (app)/layout.tsx and the onboarding pages treat
+    // `me.profile !== null` as "onboarding is complete" (see
+    // nextOnboardingStep in lib/onboarding-step.ts). Roles, areas and
+    // active-role are PUT first, and profile — the completion gate —
+    // last, so a failure partway through never leaves an account marked
+    // "done" while still missing roles/areas (which has no recovery UI
+    // yet). If this whole call fails, the user simply retries the
+    // onboarding form from a still-incomplete state.
     await apiFetch('/me/roles', {
       method: 'PUT',
       body: JSON.stringify(roles.data),
@@ -104,6 +108,10 @@ export async function submitOnboardingProfile(
     await apiFetch('/me/active-role', {
       method: 'PUT',
       body: JSON.stringify({ activeRole: roles.data.roles[0] }),
+    });
+    await apiFetch('/me/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profile.data),
     });
   } catch (error) {
     if (isApiProblemError(error)) {

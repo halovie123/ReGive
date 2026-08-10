@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { StatusState } from '@/components/ui/status-state';
 import { OnboardingForm } from '@/features/onboarding/onboarding-form';
 import { safeGetMe } from '@/lib/api/server-fetch';
+import { nextOnboardingStep } from '@/lib/onboarding-step';
 import { createClient } from '@/lib/supabase/server';
 import '@/styles/regive-app.css';
 
@@ -18,8 +19,10 @@ export default async function OnboardingProfilePage() {
   if (!user) redirect('/login');
 
   const me = await safeGetMe();
-  if (me && !me.phoneVerified) redirect('/onboarding/phone');
-  if (me && me.profile) redirect('/trang-chu');
+  if (me) {
+    const destination = nextOnboardingStep(me);
+    if (destination !== '/onboarding/profile') redirect(destination);
+  }
 
   return (
     <main className="onboarding-page">

@@ -47,8 +47,9 @@ export default function CommunityGuidelinesPage() {
 
           <h2>Ưu tiên đúng nhu cầu</h2>
           <p>
-            Chỉ nhận những món đồ thực sự cần dùng, để món đồ có thể đến tay người cần
-            nhất trong khu vực.
+            Chỉ nhận những món đồ bạn thực sự sẽ dùng đến. ReGive không xếp hạng hoàn
+            cảnh hay yêu cầu chứng minh nhu cầu — bất kỳ thành viên nào cũng có thể là
+            người nhận, miễn là dùng đúng với mục đích chia sẻ.
           </p>
 
           <h2>Vi phạm và xử lý</h2>

@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { apiFetch, getMe, isApiProblemError } from '@/lib/api/server-fetch';
 import { mapSupabaseAuthError, type PhoneActionState } from '@/lib/action-state';
+import { nextOnboardingStep } from '@/lib/onboarding-step';
 import { normalizeVietnamesePhone } from '@/lib/phone';
 import { createClient } from '@/lib/supabase/server';
 
@@ -110,11 +111,7 @@ export async function completeSignInRedirect(): Promise<never> {
   }
 
   const me = await getMe();
-  if (!me.profile) {
-    return redirect('/onboarding/profile');
-  }
-
-  return redirect('/trang-chu');
+  return redirect(nextOnboardingStep(me));
 }
 
 /** Revokes every session for this user (all providers, all devices). */

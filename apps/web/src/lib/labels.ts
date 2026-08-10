@@ -11,7 +11,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   DONOR: 'Người tặng — chia sẻ món đồ không dùng nữa',
   RECIPIENT: 'Người nhận — tìm món đồ mình cần',
-  VOLUNTEER: 'Tình nguyện viên — hỗ trợ kết nối và vận chuyển',
+  VOLUNTEER: 'Tình nguyện viên — hỗ trợ vận chuyển và giao nhận đồ',
 };
 
 /** Vietnamese ward/commune names for each seeded Hóc Môn service area. */

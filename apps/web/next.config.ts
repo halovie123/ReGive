@@ -14,10 +14,13 @@ const nextConfig: NextConfig = {
   // Webpack's resolve.extensionAlias is the standard fix for this exact
   // NodeNext-source-consumed-by-a-bundler pattern; Turbopack does not
   // currently expose an equivalent option (confirmed: its
-  // `resolveExtensions` list does not remap an already-".js" specifier).
-  // apps/web still uses Turbopack for `next dev` (fast local dev, the
-  // Next 16 default); `pnpm build` and the Playwright webServer both use
-  // `next ... --webpack` specifically so this resolves correctly.
+  // `resolveExtensions` list does not remap an already-".js" specifier,
+  // and this is also confirmed *not* Turbopack-specific — plain Webpack
+  // fails identically without this config). Since nearly every route
+  // this app has imports @buy-nothing/contracts, `dev`, `build` and the
+  // Playwright webServer all pass `--webpack` (see package.json /
+  // playwright.config.ts) so every entry point agrees on how modules
+  // resolve, trading Turbopack's dev-server speed for correctness.
   webpack(config) {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js"],
