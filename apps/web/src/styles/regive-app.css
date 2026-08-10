@@ -1,0 +1,384 @@
+/*
+ * Task 5 additions: styles for the authenticated app shell, onboarding
+ * flow, login screen and static policy/help pages.
+ *
+ * This is a separate global stylesheet (imported directly by the new
+ * pages/layouts that need it) rather than an addition to app/globals.css,
+ * which already has unrelated, uncommitted edits pending in this worktree.
+ * It reuses the ReGive design tokens (--regive-*) defined in globals.css,
+ * which is loaded first via the root layout.
+ */
+
+.auth-page {
+  width: min(480px, calc(100% - 32px));
+  margin: 56px auto 96px;
+  display: grid;
+  gap: 28px;
+}
+
+.auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--regive-muted);
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+.auth-card {
+  padding: clamp(28px, 5vw, 44px);
+  display: grid;
+  gap: 22px;
+  border: 1px solid var(--regive-line);
+  border-radius: 32px;
+  background: white;
+  box-shadow: var(--regive-shadow);
+}
+
+.auth-card h1 {
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  margin-bottom: 6px;
+}
+
+.auth-lead {
+  margin: 0;
+  color: var(--regive-muted);
+  line-height: 1.6;
+}
+
+.auth-oauth {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-oauth .ui-button {
+  width: 100%;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--regive-muted);
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--regive-line);
+}
+
+.auth-form {
+  display: grid;
+  gap: 16px;
+}
+
+.auth-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auth-hint {
+  margin: 0;
+  color: var(--regive-muted);
+  font-size: .85rem;
+}
+
+.auth-status[data-tone="error"] {
+  color: var(--regive-danger);
+  font-size: .85rem;
+}
+
+.auth-status[data-tone="success"] {
+  color: var(--regive-green);
+  font-size: .85rem;
+}
+
+/* Policy / help content pages */
+
+.policy-page {
+  width: min(760px, calc(100% - 32px));
+  margin: 40px auto 96px;
+}
+
+.policy-page .site-header {
+  width: auto;
+  margin: 0 0 48px;
+  padding: 0;
+}
+
+.policy-body {
+  display: grid;
+  gap: 22px;
+  line-height: 1.75;
+  color: var(--regive-muted);
+}
+
+.policy-body h2 {
+  margin: 18px 0 0;
+  color: var(--regive-ink);
+  font-size: 1.4rem;
+}
+
+.policy-body ul {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+}
+
+.policy-updated {
+  margin: 0 0 8px;
+  color: var(--regive-muted);
+  font-size: .82rem;
+}
+
+/* Protected app shell */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  width: 100%;
+  border-bottom: 1px solid var(--regive-line);
+  background: white;
+}
+
+.app-header-row {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 84px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.app-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: .92rem;
+  font-weight: 600;
+}
+
+.app-nav-links a {
+  padding: 8px 4px;
+  border-radius: 999px;
+}
+
+.app-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-action {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--regive-line);
+  border-radius: 50%;
+  background: white;
+  color: var(--regive-ink);
+  font-size: 1.1rem;
+}
+
+.role-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.role-switcher .field {
+  gap: 0;
+}
+
+.role-switcher .field-label {
+  display: none;
+}
+
+.role-switcher .field-control {
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.mobile-nav {
+  display: none;
+}
+
+.app-main {
+  flex: 1;
+  width: min(1180px, calc(100% - 40px));
+  margin: 40px auto 80px;
+  display: grid;
+  gap: 32px;
+}
+
+.role-home-hero {
+  padding: clamp(28px, 5vw, 44px);
+  display: grid;
+  gap: 18px;
+  border: 1px solid rgb(159 211 199 / 45%);
+  border-radius: 36px;
+  background: linear-gradient(135deg, #fff 0%, #f4faef 100%);
+}
+
+.role-home-hero .eyebrow { margin-bottom: 0; }
+
+.role-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.account-card {
+  padding: clamp(24px, 4vw, 36px);
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--regive-line);
+  border-radius: 28px;
+  background: white;
+}
+
+.account-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.account-field dt {
+  color: var(--regive-muted);
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.account-field dd {
+  margin: 6px 0 0;
+  font-size: 1rem;
+}
+
+.account-danger {
+  padding-top: 12px;
+  border-top: 1px solid var(--regive-line);
+  display: grid;
+  gap: 10px;
+}
+
+/* Onboarding */
+
+.onboarding-page {
+  width: min(560px, calc(100% - 32px));
+  margin: 56px auto 96px;
+  display: grid;
+  gap: 24px;
+}
+
+.onboarding-progress {
+  display: flex;
+  gap: 8px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--regive-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.onboarding-progress [data-active="true"] {
+  color: var(--regive-green);
+}
+
+.field-group {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.field-group legend {
+  padding: 0 0 4px;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.checkbox-options {
+  display: grid;
+  gap: 10px;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--regive-line);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.checkbox-option input {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 720px) {
+  .app-nav-links { display: none; }
+
+  .mobile-nav {
+    display: block;
+  }
+
+  .mobile-nav > summary {
+    list-style: none;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--regive-line);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .mobile-nav > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav[open] .mobile-nav-panel {
+    display: grid;
+  }
+
+  .mobile-nav-panel {
+    position: absolute;
+    right: 20px;
+    margin-top: 8px;
+    padding: 16px;
+    display: grid;
+    gap: 10px;
+    border: 1px solid var(--regive-line);
+    border-radius: 20px;
+    background: white;
+    box-shadow: var(--regive-shadow);
+    z-index: 20;
+  }
+}
