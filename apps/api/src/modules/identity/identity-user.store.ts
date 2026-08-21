@@ -1,9 +1,16 @@
+import type { UserStatus } from '@prisma/client';
+
 export const IDENTITY_USER_STORE = Symbol('IDENTITY_USER_STORE');
 
 export type ProvisionedUser = {
   id: string;
   providerSubject: string;
   phoneVerifiedAt: Date | null;
+  /**
+   * Account lifecycle state. JwtAuthGuard refuses anything other than
+   * ACTIVE, so every route behind the guard inherits suspension.
+   */
+  status: UserStatus;
 };
 
 export interface IdentityUserStore {

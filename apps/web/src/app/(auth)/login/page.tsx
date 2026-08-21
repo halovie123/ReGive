@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { MeResponse } from '@buy-nothing/contracts';
 import { BrandLockup } from '@/components/brand/brand-lockup';
+import { PublicFooter } from '@/components/site/public-footer';
 import { LoginForm } from '@/features/auth/login-form';
 import { safeGetMe } from '@/lib/api/server-fetch';
 import { nextOnboardingStep } from '@/lib/onboarding-step';
@@ -46,6 +47,7 @@ export default async function LoginPage() {
       </Link>
       <BrandLockup compact />
       <LoginForm />
+      <PublicFooter />
     </main>
   );
 }

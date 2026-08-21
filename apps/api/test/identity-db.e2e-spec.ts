@@ -135,4 +135,29 @@ describeDatabase('Identity provisioning with PostgreSQL (e2e)', () => {
       prisma!.user.count({ where: { providerSubject } }),
     ).resolves.toBe(1);
   });
+
+  /**
+   * The seed lives in the 20260804000000_identity_foundation migration's
+   * INSERT INTO "areas" statement, so this asserts against the real,
+   * migrated database — a dropped or altered seed fails here even though
+   * the infra-free gate suite (foundation-gate.e2e-spec.ts) hard-codes the
+   * same four codes in its in-memory fake and therefore cannot notice.
+   */
+  it('seeds exactly the four active areas via migration', async () => {
+    const areas = await prisma!.area.findMany({
+      select: { code: true, active: true },
+    });
+
+    // Sorted in JS, not by the query: "code" is a Postgres enum column, so
+    // ORDER BY sorts by the enum's declaration order rather than
+    // alphabetically. What matters here is the exact set, not the order.
+    expect(
+      [...areas].sort((left, right) => left.code.localeCompare(right.code)),
+    ).toEqual([
+      { code: 'BA_DIEM', active: true },
+      { code: 'DONG_THANH', active: true },
+      { code: 'HOC_MON', active: true },
+      { code: 'XUAN_THOI_SON', active: true },
+    ]);
+  });
 });

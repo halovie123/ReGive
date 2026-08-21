@@ -69,16 +69,32 @@ export async function proxy(request: NextRequest) {
     },
   });
 
+  /**
+   * getUser() can rotate the refresh token, in which case setAll() above has
+   * already written the *new* tokens onto `response`. A redirect built from
+   * scratch carries none of them, so the browser would keep the consumed
+   * refresh token and silently lose the session once Supabase's reuse
+   * detection grace window closes. Every redirect must therefore inherit the
+   * cookies Supabase just set.
+   */
+  const redirectTo = (path: string) => {
+    const redirect = NextResponse.redirect(new URL(path, request.url));
+    for (const cookie of response.cookies.getAll()) {
+      redirect.cookies.set(cookie);
+    }
+    return redirect;
+  };
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user && !isPublicPath(pathname)) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return redirectTo('/login');
   }
 
   if (user && pathname === '/login') {
-    return NextResponse.redirect(new URL('/trang-chu', request.url));
+    return redirectTo('/trang-chu');
   }
 
   return response;

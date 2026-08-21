@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import type { AppRole, AreaCode } from '@prisma/client';
+import type { AppRole, AreaCode, UserStatus } from '@prisma/client';
 import { MeResponseSchema } from '@buy-nothing/contracts';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -17,6 +17,7 @@ type StoredUser = {
   providerSubject: string;
   phoneLast4: string | null;
   phoneVerifiedAt: Date | null;
+  status: UserStatus;
   activeRole: AppRole | null;
   profile: {
     displayName: string;
@@ -65,6 +66,7 @@ class MemoryFoundationDatabase {
         providerSubject,
         phoneLast4: null,
         phoneVerifiedAt: null,
+        status: 'ACTIVE',
         activeRole: null,
         profile: null,
         roles: new Set(),

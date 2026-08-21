@@ -46,7 +46,7 @@ export class IdentityController {
       throw new PublicApiException(
         HttpStatus.UNPROCESSABLE_ENTITY,
         'PHONE_NOT_CONFIRMED',
-        'A confirmed phone number is required.',
+        'Bạn cần xác thực số điện thoại trước khi tiếp tục.',
       );
     }
 
@@ -55,7 +55,7 @@ export class IdentityController {
       throw new PublicApiException(
         HttpStatus.UNPROCESSABLE_ENTITY,
         'PHONE_INVALID',
-        'The confirmed phone number is invalid.',
+        'Số điện thoại đã xác thực không hợp lệ.',
       );
     }
 
@@ -80,7 +80,7 @@ export class IdentityController {
       throw new PublicApiException(
         HttpStatus.BAD_GATEWAY,
         'IDENTITY_PROVIDER_UNAVAILABLE',
-        'The identity provider is temporarily unavailable.',
+        'Hệ thống xác thực đang tạm gián đoạn. Vui lòng thử lại sau.',
       );
     }
   }

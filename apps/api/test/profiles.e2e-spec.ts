@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
+import type { UserStatus } from '@prisma/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { ApiExceptionFilter } from '../src/common/http/api-exception.filter';
@@ -12,7 +13,12 @@ import { ProfilesModule } from '../src/modules/profiles/profiles.module';
 class MemoryOnboardingDatabase {
   private readonly users = new Map<
     string,
-    { id: string; providerSubject: string; phoneVerifiedAt: Date | null }
+    {
+      id: string;
+      providerSubject: string;
+      phoneVerifiedAt: Date | null;
+      status: UserStatus;
+    }
   >();
 
   readonly user = {
@@ -27,6 +33,7 @@ class MemoryOnboardingDatabase {
         id: `user-${this.users.size + 1}`,
         providerSubject,
         phoneVerifiedAt: null,
+        status: 'ACTIVE' as const,
       };
       this.users.set(providerSubject, created);
       return Promise.resolve(created);

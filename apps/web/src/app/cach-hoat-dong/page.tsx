@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PublicHeader } from '@/components/site/public-header';
+import { PublicFooter } from '@/components/site/public-footer';
 import '@/styles/regive-app.css';
 
 export const metadata: Metadata = {
@@ -58,6 +59,7 @@ export default function HowItWorksPage() {
           <p>Một tài khoản có thể đảm nhận nhiều vai trò cùng lúc.</p>
         </div>
       </article>
+      <PublicFooter />
     </main>
   );
 }

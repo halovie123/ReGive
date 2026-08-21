@@ -66,7 +66,7 @@ class FailureController {
     throw new PublicApiException(
       403,
       'PHONE_NOT_VERIFIED',
-      'A confirmed phone number is required.',
+      'Bạn cần xác thực số điện thoại để tiếp tục.',
     );
   }
 }
@@ -180,7 +180,7 @@ describe('ApiExceptionFilter', () => {
 
     expect(response.body).toEqual({
       code: 'PHONE_NOT_VERIFIED',
-      message: 'A confirmed phone number is required.',
+      message: 'Bạn cần xác thực số điện thoại để tiếp tục.',
       correlationId: 'request-phone',
     });
   });

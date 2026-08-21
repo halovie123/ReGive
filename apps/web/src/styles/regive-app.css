@@ -139,6 +139,46 @@
   font-size: .82rem;
 }
 
+/* Shared public footer (landing page, /login and the policy/help pages) */
+
+.public-footer {
+  width: min(1180px, calc(100% - 40px));
+  margin: 72px auto 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--regive-line);
+  display: grid;
+  gap: 16px;
+}
+
+.policy-page .public-footer,
+.auth-page .public-footer {
+  width: auto;
+  margin: 56px 0 0;
+}
+
+.public-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.public-footer-nav a {
+  color: var(--regive-ink);
+}
+
+.public-footer-nav a:hover {
+  color: var(--regive-green);
+}
+
+.public-footer-note {
+  margin: 0;
+  color: var(--regive-muted);
+  font-size: .82rem;
+  line-height: 1.6;
+}
+
 /* Protected app shell */
 
 .app-shell {
@@ -247,7 +287,25 @@
 .role-home-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
+}
+
+.role-home-actions .button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  box-shadow: none;
+}
+
+.role-home-actions .button:disabled:hover {
+  transform: none;
+}
+
+.role-home-cta-note {
+  margin: 0;
+  color: var(--regive-muted);
+  font-size: .85rem;
+  font-weight: 600;
 }
 
 .account-card {

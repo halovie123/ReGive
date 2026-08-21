@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PublicHeader } from '@/components/site/public-header';
+import { PublicFooter } from '@/components/site/public-footer';
 import '@/styles/regive-app.css';
 
 export const metadata: Metadata = {
@@ -25,7 +26,10 @@ export default function PrivacyPage() {
             <li>Số điện thoại, đã xác thực qua mã OTP, dùng để định danh tài khoản.</li>
             <li>Tên hiển thị, giới thiệu ngắn và ảnh đại diện bạn tự cung cấp.</li>
             <li>Vai trò (người tặng, người nhận, tình nguyện viên) và khu vực hoạt động.</li>
-            <li>Thông tin đăng nhập qua Google hoặc Facebook nếu bạn chọn phương thức đó.</li>
+            <li>
+              Định danh tài khoản Google hoặc Facebook nếu bạn chọn đăng nhập bằng
+              phương thức đó — ReGive không bao giờ nhận hay lưu mật khẩu của bạn.
+            </li>
           </ul>
 
           <h2>Cách chúng tôi bảo vệ dữ liệu</h2>
@@ -55,6 +59,7 @@ export default function PrivacyPage() {
           </p>
         </div>
       </article>
+      <PublicFooter />
     </main>
   );
 }

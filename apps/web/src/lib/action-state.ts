@@ -20,6 +20,14 @@ export type ProfileActionState = { status: 'idle' } | { status: 'error'; message
 
 const GENERIC_ERROR = 'Đã xảy ra lỗi. Vui lòng thử lại.';
 
+/**
+ * Translates a Supabase/GoTrue error into user-facing Vietnamese. Only the
+ * cases named below get specific copy; anything else falls back to the
+ * generic message. The raw `message` is deliberately never returned — it is
+ * upstream English prose (rate-limit wording, "Signups not allowed for otp",
+ * …) that would both break the Vietnamese-only UX and leak provider detail
+ * into the login and phone-verification forms.
+ */
 export function mapSupabaseAuthError(message: string | undefined): string {
   const normalized = (message ?? '').toLowerCase();
   if (normalized.includes('rate limit') || normalized.includes('too many')) {
@@ -31,5 +39,5 @@ export function mapSupabaseAuthError(message: string | undefined): string {
   if (normalized.includes('token') || normalized.includes('otp') || normalized.includes('code')) {
     return 'Mã xác thực không đúng hoặc đã hết hạn.';
   }
-  return message || GENERIC_ERROR;
+  return GENERIC_ERROR;
 }

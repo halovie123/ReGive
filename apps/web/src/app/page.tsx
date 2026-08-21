@@ -1,4 +1,6 @@
 import { BrandLockup } from '@/components/brand/brand-lockup';
+import { PublicFooter } from '@/components/site/public-footer';
+import '@/styles/regive-app.css';
 
 const categories = ['Đồ gia dụng', 'Quần áo', 'Sách vở', 'Đồ trẻ em', 'Thiết bị'];
 
@@ -10,7 +12,7 @@ export default function Home() {
           <BrandLockup compact />
         </a>
         <nav aria-label="Điều hướng chính" className="main-nav">
-          <a href="#cach-hoat-dong">Cách hoạt động</a>
+          <a href="/cach-hoat-dong">Cách hoạt động</a>
           <a href="#cong-dong">Cộng đồng</a>
           <a className="nav-cta" href="/login">Đăng nhập</a>
         </nav>
@@ -26,7 +28,7 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="/login">Bắt đầu chia sẻ</a>
-            <a className="button button-secondary" href="#cach-hoat-dong">Tìm hiểu cách hoạt động</a>
+            <a className="button button-secondary" href="/cach-hoat-dong">Tìm hiểu cách hoạt động</a>
           </div>
           <ul className="trust-list" aria-label="Cam kết cộng đồng">
             <li>Không mua bán</li>
@@ -70,6 +72,8 @@ export default function Home() {
           {categories.map((category) => <span key={category}>{category}</span>)}
         </div>
       </section>
+
+      <PublicFooter />
     </main>
   );
 }

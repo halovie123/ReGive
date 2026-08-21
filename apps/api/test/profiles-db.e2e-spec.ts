@@ -165,4 +165,41 @@ describeDatabase('Profile mutation concurrency with PostgreSQL (e2e)', () => {
       await lockHolder.catch(() => undefined);
     }
   });
+
+  /**
+   * updateAreas is otherwise only covered by fakes, which cannot show that
+   * the areaCode FK to the migration-seeded "areas" table resolves, that
+   * the row lock in lockActiveAreas runs against a real enum column, or
+   * that replacing a selection actually deletes the previous rows. This
+   * exercises the whole round-trip against Postgres.
+   */
+  it('persists an area selection and replaces it on the next write', async () => {
+    const first = await profiles!.updateAreas(userId!, [
+      'HOC_MON',
+      'BA_DIEM',
+      'HOC_MON',
+    ]);
+    expect([...first.areas].sort()).toEqual(['BA_DIEM', 'HOC_MON']);
+    // Sorted in JS: "area_code" is a Postgres enum, so ORDER BY follows the
+    // enum's declaration order, not alphabetical order. The assertion is
+    // about which rows persisted, not their order.
+    const persisted = await prisma!.userArea.findMany({
+      where: { userId },
+      select: { areaCode: true },
+    });
+    expect(
+      [...persisted].sort((left, right) =>
+        left.areaCode.localeCompare(right.areaCode),
+      ),
+    ).toEqual([{ areaCode: 'BA_DIEM' }, { areaCode: 'HOC_MON' }]);
+
+    const second = await profiles!.updateAreas(userId!, ['DONG_THANH']);
+    expect(second.areas).toEqual(['DONG_THANH']);
+    await expect(
+      prisma!.userArea.findMany({
+        where: { userId },
+        select: { areaCode: true },
+      }),
+    ).resolves.toEqual([{ areaCode: 'DONG_THANH' }]);
+  });
 });

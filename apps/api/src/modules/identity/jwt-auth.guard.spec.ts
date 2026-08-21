@@ -1,4 +1,5 @@
 import { ExecutionContext } from '@nestjs/common';
+import type { UserStatus } from '@prisma/client';
 import type { IdentityClaims } from '@buy-nothing/contracts';
 import { IdentityVerifier } from './identity-verifier';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -7,6 +8,7 @@ type StoredUser = {
   id: string;
   providerSubject: string;
   phoneVerifiedAt: Date | null;
+  status: UserStatus;
 };
 
 class FixedIdentityVerifier implements IdentityVerifier {
@@ -19,6 +21,8 @@ class FixedIdentityVerifier implements IdentityVerifier {
 }
 
 class MemoryPrisma {
+  constructor(private readonly provisionedStatus: UserStatus = 'ACTIVE') {}
+
   readonly users = new Map<string, StoredUser>();
   readonly user = {
     upsert: ({
@@ -34,6 +38,7 @@ class MemoryPrisma {
         id: `user-${this.users.size + 1}`,
         providerSubject: where.providerSubject,
         phoneVerifiedAt: null,
+        status: this.provisionedStatus,
       };
       this.users.set(where.providerSubject, created);
       return Promise.resolve(created);
@@ -65,6 +70,7 @@ describe('JwtAuthGuard', () => {
         id: 'user-1',
         providerSubject: 'subject-1',
         phoneVerifiedAt: null,
+        status: 'ACTIVE',
       },
     ]);
   });
@@ -127,4 +133,37 @@ describe('JwtAuthGuard', () => {
       },
     });
   });
+
+  it('admits an ACTIVE account', async () => {
+    const { context, request } = requestContext('Bearer valid-token');
+    const guard = new JwtAuthGuard(
+      new FixedIdentityVerifier(),
+      new MemoryPrisma('ACTIVE') as never,
+    );
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request).toMatchObject({ currentUser: { id: 'user-1' } });
+  });
+
+  it.each(['SUSPENDED', 'DEACTIVATED'] as const)(
+    'refuses a %s account even with a valid token',
+    async (status) => {
+      const { context, request } = requestContext('Bearer valid-token');
+      const guard = new JwtAuthGuard(
+        new FixedIdentityVerifier(),
+        new MemoryPrisma(status) as never,
+      );
+
+      await expect(guard.canActivate(context)).rejects.toMatchObject({
+        status: 403,
+        response: {
+          code: 'ACCOUNT_SUSPENDED',
+          message:
+            'Tài khoản của bạn đang bị tạm khóa. Vui lòng liên hệ bộ phận hỗ trợ.',
+        },
+      });
+      // A refused request must never be handed a currentUser downstream.
+      expect(request).not.toHaveProperty('currentUser');
+    },
+  );
 });

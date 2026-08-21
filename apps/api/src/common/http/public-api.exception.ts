@@ -2,6 +2,7 @@ import { HttpException } from '@nestjs/common';
 
 export type PublicProblemCode =
   | 'AUTH_REQUIRED'
+  | 'ACCOUNT_SUSPENDED'
   | 'PHONE_NOT_VERIFIED'
   | 'PHONE_NOT_CONFIRMED'
   | 'PHONE_INVALID'

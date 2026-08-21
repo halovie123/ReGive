@@ -49,7 +49,7 @@ describe('IdentityController syncPhone', () => {
       status: 502,
       response: {
         code: 'IDENTITY_PROVIDER_UNAVAILABLE',
-        message: 'The identity provider is temporarily unavailable.',
+        message: 'Hệ thống xác thực đang tạm gián đoạn. Vui lòng thử lại sau.',
       },
     });
   });

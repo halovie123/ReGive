@@ -1,6 +1,7 @@
 import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
+import type { UserStatus } from '@prisma/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { ApiExceptionFilter } from '../src/common/http/api-exception.filter';
@@ -15,6 +16,7 @@ type MemoryUser = {
   id: string;
   providerSubject: string;
   phoneVerifiedAt: Date | null;
+  status: UserStatus;
   encryptedPhone?: string;
   phoneLast4?: string;
 };
@@ -29,6 +31,7 @@ class MemoryIdentityStore {
         id: `user-${this.users.size + 1}`,
         providerSubject: where.providerSubject,
         phoneVerifiedAt: null,
+        status: 'ACTIVE',
       };
       this.users.set(where.providerSubject, created);
       return Promise.resolve(created);

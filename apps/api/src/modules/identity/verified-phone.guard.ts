@@ -16,7 +16,7 @@ export class VerifiedPhoneGuard implements CanActivate {
       throw new PublicApiException(
         HttpStatus.FORBIDDEN,
         'PHONE_NOT_VERIFIED',
-        'A confirmed phone number is required.',
+        'Bạn cần xác thực số điện thoại để tiếp tục.',
       );
     }
 
