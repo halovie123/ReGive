@@ -88,7 +88,7 @@ Never commit `.env`, `.env.local`, or any file containing a real
 
 There is no separate seed script: the four service areas (`HOC_MON`,
 `BA_DIEM`, `XUAN_THOI_SON`, `DONG_THANH`) are inserted by the migration SQL
-itself (`apps/api/prisma/migrations/20260804000000_identity_foundation/migration.sql:49-53`),
+itself (`apps/api/prisma/migrations/20260804000000_identity_foundation/migration.sql:49-57`),
 so applying migrations is sufficient to get a usable dev database.
 
 Apply migrations to your everyday dev database:
