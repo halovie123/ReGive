@@ -52,4 +52,10 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Verify infra-free API e2e suite (release gate)
+        run: pnpm --filter api test:e2e
+      - name: Install Playwright browser
+        run: pnpm --filter web exec playwright install --with-deps chromium
+      - name: Verify web e2e suite
+        run: pnpm --filter web test:e2e
       - run: pnpm build
