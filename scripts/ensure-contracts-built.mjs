@@ -142,6 +142,20 @@ function releaseLock() {
   fs.rmSync(lockDir, { recursive: true, force: true });
 }
 
+/**
+ * A non-zero tsc exit. Carried as a thrown error rather than a direct
+ * process.exit() so the caller's `finally` still runs and releases the lock --
+ * process.exit() terminates without unwinding the stack, which would orphan
+ * the lock directory and stall the next invocation.
+ */
+class ContractsBuildFailed extends Error {
+  constructor(status) {
+    super(`packages/contracts: tsc exited with status ${status}`);
+    this.name = 'ContractsBuildFailed';
+    this.status = status;
+  }
+}
+
 function build(signature) {
   process.stderr.write('packages/contracts: compiling (inputs changed)\n');
   const result = spawnSync(process.execPath, [resolveTsc(), '-p', tsconfigBuild], {
@@ -149,7 +163,7 @@ function build(signature) {
     stdio: 'inherit',
   });
   if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (result.status !== 0) throw new ContractsBuildFailed(result.status ?? 1);
   fs.mkdirSync(distDir, { recursive: true });
   // Written last: this is the completion marker, not just a cache key.
   fs.writeFileSync(stampFile, signature);
@@ -167,6 +181,12 @@ try {
   // Re-check under the lock: a concurrent builder may have finished while we waited.
   const signature = computeSignature();
   if (force || !isFresh(signature)) build(signature);
+} catch (error) {
+  if (!(error instanceof ContractsBuildFailed)) throw error;
+  // tsc already printed its diagnostics; propagate the status without adding a
+  // stack trace. Setting exitCode (rather than calling process.exit) lets the
+  // finally below run, so a failed build always releases the lock.
+  process.exitCode = error.status;
 } finally {
   releaseLock();
 }
