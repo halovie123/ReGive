@@ -8,9 +8,5 @@
       "ts-jest",
       { "tsconfig": "<rootDir>/apps/api/tsconfig.spec.json" }
     ]
-  },
-  "moduleNameMapper": {
-    "^@buy-nothing/contracts$": "<rootDir>/packages/contracts/src/index.ts",
-    "^(\\.{1,2}/.*)\\.js$": "$1"
   }
 }

@@ -4,12 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "contracts:build": "corepack pnpm --filter @buy-nothing/contracts build",
+    "predev": "corepack pnpm run contracts:build",
     "dev": "next dev --webpack",
+    "prebuild": "corepack pnpm run contracts:build",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "pretest": "corepack pnpm run contracts:build",
     "test": "vitest run",
+    "pretest:e2e": "corepack pnpm run contracts:build",
     "test:e2e": "playwright test",
+    "pretypecheck": "corepack pnpm run contracts:build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
