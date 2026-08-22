@@ -15,7 +15,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node ../../scripts/ensure-contracts-built.mjs",
+    "build:force": "node ../../scripts/ensure-contracts-built.mjs --force",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -4,6 +4,7 @@ node_modules/
 .local-bin/
 .next/
 dist/
+.build-lock/
 coverage/
 playwright-report/
 test-results/

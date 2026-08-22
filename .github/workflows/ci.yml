@@ -59,3 +59,19 @@ jobs:
       - name: Verify web e2e suite
         run: pnpm --filter web test:e2e
       - run: pnpm build
+      # Every other gate above passes on an API that cannot start: a NodeNext
+      # module-resolution bug once shipped through lint, typecheck, 75 unit
+      # tests, every e2e suite and `nest build` while `node dist/src/main.js`
+      # died on boot. Nothing started the process. This does.
+      - name: Verify the built API actually boots and serves /v1/health
+        run: pnpm --filter api smoke
+        env:
+          NODE_ENV: development
+          SMOKE_PORT: "3001"
+          DATABASE_URL: postgresql://regive:regive@127.0.0.1:5432/regive_identity_ci
+          REDIS_URL: redis://127.0.0.1:6379
+          SUPABASE_URL: https://smoke.example.supabase.co
+          SUPABASE_JWKS_URL: https://smoke.example.supabase.co/auth/v1/.well-known/jwks.json
+          SUPABASE_ANON_KEY: smoke-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: smoke-service-role-key
+          PII_ENCRYPTION_KEY_V1: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
