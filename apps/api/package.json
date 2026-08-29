@@ -6,6 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "postinstall": "prisma generate",
     "contracts:build": "node ../../scripts/ensure-contracts-built.mjs",
     "prebuild": "node ../../scripts/ensure-contracts-built.mjs",
     "build": "nest build",
