@@ -30,7 +30,10 @@ const baseEnvSchema = z.object({
     .default('development'),
   ALLOW_INSECURE_SUPABASE_HTTP: z.enum(['true', 'false']).default('false'),
   DATABASE_URL: urlWithProtocol('postgres:', 'postgresql:'),
-  REDIS_URL: urlWithProtocol('redis:', 'rediss:'),
+  // Not yet read anywhere in the app (reserved for future chat/notification
+  // features) — optional so deployment doesn't require provisioning Redis
+  // before anything actually needs it.
+  REDIS_URL: urlWithProtocol('redis:', 'rediss:').optional(),
   SUPABASE_URL: urlWithProtocol('http:', 'https:'),
   SUPABASE_JWKS_URL: urlWithProtocol('http:', 'https:'),
   SUPABASE_ANON_KEY: nonBlankString,

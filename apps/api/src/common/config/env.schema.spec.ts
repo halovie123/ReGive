@@ -27,6 +27,15 @@ describe('envSchema', () => {
     expect(() => envSchema.parse(environment)).toThrow('DATABASE_URL');
   });
 
+  it('accepts a missing REDIS_URL (not yet used by the app)', () => {
+    const environment: Partial<typeof validEnvironment> = {
+      ...validEnvironment,
+    };
+    delete environment.REDIS_URL;
+
+    expect(() => envSchema.parse(environment)).not.toThrow();
+  });
+
   it('names a malformed URL key', () => {
     expect(() =>
       envSchema.parse({ ...validEnvironment, SUPABASE_URL: 'not-a-url' }),
