@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test';
 /**
  * End-to-end coverage for the auth/onboarding flow described in Task 5.
  *
+ * Sign-in is Google/Facebook OAuth only — phone/OTP sign-in and phone
+ * verification were removed (no paid SMS gateway); see
+ * lib/onboarding-step.ts.
+ *
  * Two groups:
  *  - "public routing" — runs standalone against `next dev`, no Supabase
  *    project or API required. proxy.ts is designed to fail closed on
@@ -11,10 +15,10 @@ import { expect, test } from '@playwright/test';
  *    real, not stubbed.
  *  - "live auth flows" — needs a real Supabase project with Google and
  *    Facebook OAuth apps configured, plus the NestJS API and Postgres
- *    running so /v1/identity/sync-phone and /v1/me resolve. Gated behind
- *    RUN_E2E_LIVE_AUTH=true, mirroring the RUN_DATABASE_TESTS pattern used
- *    by the API's DB-backed e2e specs (apps/api/test/*-db.e2e-spec.ts).
- *    Not runnable in this sandbox: no live OAuth apps and no API/DB stack.
+ *    running so /v1/me resolves. Gated behind RUN_E2E_LIVE_AUTH=true,
+ *    mirroring the RUN_DATABASE_TESTS pattern used by the API's DB-backed
+ *    e2e specs (apps/api/test/*-db.e2e-spec.ts). Not runnable in this
+ *    sandbox: no live OAuth apps and no API/DB stack.
  */
 
 const PUBLIC_ROUTES = [
@@ -36,11 +40,10 @@ test.describe('public routing', () => {
     });
   }
 
-  test('login page offers Google, Facebook and phone number sign-in', async ({ page }) => {
+  test('login page offers Google and Facebook sign-in', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Tiếp tục với Google' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Tiếp tục với Facebook' })).toBeVisible();
-    await expect(page.getByLabel('Số điện thoại')).toBeVisible();
   });
 
   test('an unauthenticated visitor is redirected to /login from a protected route', async ({
@@ -54,9 +57,6 @@ test.describe('public routing', () => {
   });
 
   test('onboarding routes redirect an unauthenticated visitor to /login', async ({ page }) => {
-    await page.goto('/onboarding/phone');
-    await expect(page).toHaveURL(/\/login$/);
-
     await page.goto('/onboarding/profile');
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -80,20 +80,19 @@ test.describe('public routing', () => {
 const RUN_LIVE_AUTH = process.env.RUN_E2E_LIVE_AUTH === 'true';
 
 /**
- * These three scenarios stay as fixme stubs deliberately, not just for lack
+ * These two scenarios stay as fixme stubs deliberately, not just for lack
  * of a live Supabase project.
  *
- * The routing *decision* each one exercises — "unverified phone ->
- * /onboarding/phone", "phoneVerified + profile !== null -> /trang-chu" —
- * is now a single pure function, lib/onboarding-step.ts's
- * nextOnboardingStep(), used by every guard in the app (login page, both
- * onboarding pages, the app shell layout, and completeSignInRedirect).
- * That function has exhaustive unit coverage of exactly these cases,
- * including the two named here, in tests/lib/onboarding-step.test.tsx —
- * that is what regresses if this logic ever drifts again, which is the
- * actual failure mode Fix round 1 finding 7 was about.
+ * The routing *decision* the first one exercises — "profile !== null ->
+ * /trang-chu" — is now a single pure function, lib/onboarding-step.ts's
+ * nextOnboardingStep(), used by every guard in the app (login page, the
+ * onboarding page, the app shell layout, and completeSignInRedirect).
+ * That function has exhaustive unit coverage of exactly this case in
+ * tests/lib/onboarding-step.test.tsx — that is what regresses if this
+ * logic ever drifts again, which is the actual failure mode Fix round 1
+ * finding 7 was about.
  *
- * Turning these into genuine browser-level Playwright tests (as opposed
+ * Turning this into a genuine browser-level Playwright test (as opposed
  * to that unit coverage) means getting a real signed-in session in front
  * of a running `next dev` server. We looked at faking it — cookie
  * @supabase/ssr will accept — and it is not a small mock: the session
@@ -119,10 +118,6 @@ test.describe('live auth flows', () => {
     !RUN_LIVE_AUTH,
     'Requires a live Supabase project with Google/Facebook OAuth apps configured and a running API+DB stack. Set RUN_E2E_LIVE_AUTH=true once that infrastructure is available.',
   );
-
-  test('an OAuth user without a verified phone lands on /onboarding/phone', async () => {
-    test.fixme();
-  });
 
   test('a completed profile reaches /trang-chu', async () => {
     test.fixme();

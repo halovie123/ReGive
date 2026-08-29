@@ -12,26 +12,14 @@ const baseMe: MeResponse = {
 };
 
 describe('nextOnboardingStep', () => {
-  it('routes an unverified OAuth user (no confirmed phone yet) to /onboarding/phone', () => {
-    const me: MeResponse = { ...baseMe, phoneVerified: false, profile: null };
-    expect(nextOnboardingStep(me)).toBe('/onboarding/phone');
-  });
-
-  it('routes a phone-verified user without a profile to /onboarding/profile', () => {
-    const me: MeResponse = {
-      ...baseMe,
-      phoneVerified: true,
-      phoneLast4: '1234',
-      profile: null,
-    };
+  it('routes a user without a profile to /onboarding/profile', () => {
+    const me: MeResponse = { ...baseMe, profile: null };
     expect(nextOnboardingStep(me)).toBe('/onboarding/profile');
   });
 
   it('routes a user with a completed profile to /trang-chu', () => {
     const me: MeResponse = {
       ...baseMe,
-      phoneVerified: true,
-      phoneLast4: '1234',
       profile: { displayName: 'Lan', bio: '', avatarKey: null },
       roles: ['DONOR'],
       activeRole: 'DONOR',
@@ -40,27 +28,25 @@ describe('nextOnboardingStep', () => {
     expect(nextOnboardingStep(me)).toBe('/trang-chu');
   });
 
-  it('prioritizes the phone step over the profile step when neither is done', () => {
-    const me: MeResponse = { ...baseMe, phoneVerified: false, profile: null };
-    // Even if a stale/inconsistent response somehow had a profile without
-    // a verified phone, phone verification must still come first.
-    expect(nextOnboardingStep(me)).toBe('/onboarding/phone');
+  it('ignores phoneVerified entirely (phone/OTP sign-in was removed)', () => {
+    const withProfile: MeResponse = {
+      ...baseMe,
+      phoneVerified: false,
+      profile: { displayName: 'Lan', bio: '', avatarKey: null },
+    };
+    expect(nextOnboardingStep(withProfile)).toBe('/trang-chu');
   });
 });
 
 describe('isOnboardingComplete', () => {
-  it('is false until the user reaches /trang-chu', () => {
-    expect(isOnboardingComplete({ ...baseMe, phoneVerified: false })).toBe(false);
-    expect(
-      isOnboardingComplete({ ...baseMe, phoneVerified: true, profile: null }),
-    ).toBe(false);
+  it('is false until the user has a profile', () => {
+    expect(isOnboardingComplete(baseMe)).toBe(false);
   });
 
-  it('is true once phone and profile are both done', () => {
+  it('is true once the profile is set', () => {
     expect(
       isOnboardingComplete({
         ...baseMe,
-        phoneVerified: true,
         profile: { displayName: 'Lan', bio: '', avatarKey: null },
       }),
     ).toBe(true);

@@ -42,7 +42,7 @@ export default async function AccountSecurityPage() {
         <h2>Đăng xuất khỏi mọi thiết bị</h2>
         <p className="auth-lead">
           Thao tác này sẽ đăng xuất bạn khỏi ReGive trên tất cả thiết bị và thu hồi mọi
-          phiên đăng nhập qua Google, Facebook hoặc số điện thoại.
+          phiên đăng nhập qua Google hoặc Facebook.
         </p>
         <form action={signOutEverywhere}>
           <button type="submit" className="ui-button ui-button-secondary">

@@ -2,10 +2,8 @@
 
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { apiFetch, getMe, isApiProblemError } from '@/lib/api/server-fetch';
-import { mapSupabaseAuthError, type PhoneActionState } from '@/lib/action-state';
+import { getMe } from '@/lib/api/server-fetch';
 import { nextOnboardingStep } from '@/lib/onboarding-step';
-import { normalizeVietnamesePhone } from '@/lib/phone';
 import { createClient } from '@/lib/supabase/server';
 
 async function resolveOrigin(): Promise<string> {
@@ -41,55 +39,10 @@ export async function signInWithFacebook(): Promise<void> {
   await startOAuthSignIn('facebook');
 }
 
-/** Step 1 of phone sign-in: send an OTP code via Supabase phone auth. */
-export async function requestPhoneOtp(
-  _prevState: PhoneActionState,
-  formData: FormData,
-): Promise<PhoneActionState> {
-  const rawPhone = String(formData.get('phone') ?? '');
-  const phone = normalizeVietnamesePhone(rawPhone);
-  if (!phone) {
-    return { status: 'error', message: 'Số điện thoại không hợp lệ. Vui lòng nhập lại.' };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({ phone });
-  if (error) {
-    return { status: 'error', message: mapSupabaseAuthError(error.message) };
-  }
-
-  return { status: 'otp-sent', phone };
-}
-
 /**
- * Step 2 of phone sign-in: verify the OTP code, which establishes a
- * Supabase session, then hand off to completeSignInRedirect. Always
- * redirects on success.
- */
-export async function verifyPhoneOtp(
-  _prevState: PhoneActionState,
-  formData: FormData,
-): Promise<PhoneActionState> {
-  const phone = String(formData.get('phone') ?? '');
-  const code = String(formData.get('code') ?? '').trim();
-  if (!phone || !code) {
-    return { status: 'error', message: 'Vui lòng nhập mã xác thực.' };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ phone, token: code, type: 'sms' });
-  if (error) {
-    return { status: 'error', message: mapSupabaseAuthError(error.message) };
-  }
-
-  return await completeSignInRedirect();
-}
-
-/**
- * Shared post-authentication routing, used after any successful sign-in
- * (OAuth callback, phone sign-in OTP, or an OAuth session's phone
- * confirmation): syncs the confirmed phone number to the API, then routes
- * the user to the right next step. Always redirects; never returns.
+ * Shared post-authentication routing, used after any successful OAuth
+ * sign-in (the /auth/callback route): routes the user to the right next
+ * step. Always redirects; never returns.
  */
 export async function completeSignInRedirect(): Promise<never> {
   const supabase = await createClient();
@@ -99,15 +52,6 @@ export async function completeSignInRedirect(): Promise<never> {
 
   if (!user) {
     return redirect('/login');
-  }
-
-  try {
-    await apiFetch('/identity/sync-phone', { method: 'POST' });
-  } catch (error) {
-    if (isApiProblemError(error) && error.problem.code === 'PHONE_NOT_CONFIRMED') {
-      return redirect('/onboarding/phone');
-    }
-    return redirect('/onboarding/phone?error=sync_failed');
   }
 
   const me = await getMe();

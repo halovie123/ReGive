@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
  * OAuth redirect target for both Google and Facebook (configured as the
  * `redirectTo` in features/auth/auth-actions.ts's signInWithOAuth calls).
  * Exchanges the authorization code for a Supabase session, then hands off
- * to completeSignInRedirect for phone-sync + onboarding routing.
+ * to completeSignInRedirect for onboarding routing.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
