@@ -24,7 +24,7 @@ export default function TermsPage() {
           <h2>1. Nền tảng phi thương mại</h2>
           <p>
             ReGive chỉ dùng để chia sẻ đồ dùng miễn phí giữa các thành viên trong khu vực
-            Hóc Môn. Nghiêm cấm mọi hình thức mua, bán, trao đổi có thu phí hoặc quảng cáo
+            TP.HCM. Nghiêm cấm mọi hình thức mua, bán, trao đổi có thu phí hoặc quảng cáo
             thương mại trên nền tảng.
           </p>
 

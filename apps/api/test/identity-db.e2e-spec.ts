@@ -1,5 +1,6 @@
 import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AREA_CODES } from '@buy-nothing/contracts';
 import { Test } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
@@ -137,13 +138,14 @@ describeDatabase('Identity provisioning with PostgreSQL (e2e)', () => {
   });
 
   /**
-   * The seed lives in the 20260804000000_identity_foundation migration's
-   * INSERT INTO "areas" statement, so this asserts against the real,
-   * migrated database — a dropped or altered seed fails here even though
-   * the infra-free gate suite (foundation-gate.e2e-spec.ts) hard-codes the
-   * same four codes in its in-memory fake and therefore cannot notice.
+   * The seed lives in the migrations' INSERT INTO "areas" statements —
+   * originally four Hóc Môn communes, then replaced city-wide by
+   * 20260905000000_expand_areas_to_hcmc — so this asserts against the real,
+   * migrated database. A dropped or altered seed fails here even though the
+   * infra-free gate suite (foundation-gate.e2e-spec.ts) hard-codes codes in
+   * its in-memory fake and therefore cannot notice.
    */
-  it('seeds exactly the four active areas via migration', async () => {
+  it('seeds every Ho Chi Minh City district as an active area via migration', async () => {
     const areas = await prisma!.area.findMany({
       select: { code: true, active: true },
     });
@@ -153,11 +155,14 @@ describeDatabase('Identity provisioning with PostgreSQL (e2e)', () => {
     // alphabetically. What matters here is the exact set, not the order.
     expect(
       [...areas].sort((left, right) => left.code.localeCompare(right.code)),
-    ).toEqual([
-      { code: 'BA_DIEM', active: true },
-      { code: 'DONG_THANH', active: true },
-      { code: 'HOC_MON', active: true },
-      { code: 'XUAN_THOI_SON', active: true },
-    ]);
+    ).toEqual(
+      [...AREA_CODES]
+        .sort((left, right) => left.localeCompare(right))
+        .map((code) => ({ code, active: true })),
+    );
+
+    // The retired Hóc Môn commune codes must be gone, not merely inactive:
+    // 20260905000000 rebuilt the enum without them.
+    expect(areas.map((area) => area.code as string)).not.toContain('BA_DIEM');
   });
 });

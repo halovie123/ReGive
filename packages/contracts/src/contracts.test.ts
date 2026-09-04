@@ -22,20 +22,46 @@ describe('shared contracts', () => {
 
   it.each([
     'HOC_MON',
-    'BA_DIEM',
-    'XUAN_THOI_SON',
-    'DONG_THANH',
+    'QUAN_1',
+    'THU_DUC',
+    'CAN_GIO',
   ] as const)('accepts the exact area code %s', (areaCode) => {
     expect(AreaCodeSchema.parse(areaCode)).toBe(areaCode);
   });
 
-  it('publishes exactly the supported area codes', () => {
+  it.each(['BA_DIEM', 'XUAN_THOI_SON', 'DONG_THANH'] as const)(
+    'rejects the retired Hóc Môn commune code %s',
+    (retired) => {
+      expect(AreaCodeSchema.safeParse(retired).success).toBe(false);
+    },
+  );
+
+  it('publishes exactly the 22 Ho Chi Minh City districts', () => {
     expect(AREA_CODES).toEqual([
+      'QUAN_1',
+      'QUAN_3',
+      'QUAN_4',
+      'QUAN_5',
+      'QUAN_6',
+      'QUAN_7',
+      'QUAN_8',
+      'QUAN_10',
+      'QUAN_11',
+      'QUAN_12',
+      'THU_DUC',
+      'BINH_THANH',
+      'GO_VAP',
+      'PHU_NHUAN',
+      'TAN_BINH',
+      'TAN_PHU',
+      'BINH_TAN',
       'HOC_MON',
-      'BA_DIEM',
-      'XUAN_THOI_SON',
-      'DONG_THANH',
+      'CU_CHI',
+      'BINH_CHANH',
+      'NHA_BE',
+      'CAN_GIO',
     ]);
+    expect(new Set(AREA_CODES).size).toBe(22);
   });
 
   it('parses a Vietnamese API problem', () => {

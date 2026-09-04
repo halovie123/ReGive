@@ -23,7 +23,7 @@ export default function Home() {
           <p className="eyebrow">Trao đi nhẹ nhàng · Nhận về tử tế</p>
           <h1 id="hero-title">Chia sẻ món đồ cũ, trao thêm một niềm vui</h1>
           <p className="hero-lead">
-            ReGive kết nối những người hàng xóm tại Hóc Môn để đồ dùng còn tốt
+            ReGive kết nối những người hàng xóm khắp TP.HCM để đồ dùng còn tốt
             tìm được một mái nhà mới — gần gũi, minh bạch và không lãng phí.
           </p>
           <div className="hero-actions">
@@ -48,7 +48,7 @@ export default function Home() {
           <div className="gift-card card-two">
             <span className="people-icon">♡</span>
             <strong>Gần bạn</strong>
-            <span>Hóc Môn, TP.HCM</span>
+            <span>Khắp TP.HCM</span>
           </div>
         </div>
       </section>

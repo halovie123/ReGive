@@ -176,10 +176,10 @@ describeDatabase('Profile mutation concurrency with PostgreSQL (e2e)', () => {
   it('persists an area selection and replaces it on the next write', async () => {
     const first = await profiles!.updateAreas(userId!, [
       'HOC_MON',
-      'BA_DIEM',
+      'QUAN_1',
       'HOC_MON',
     ]);
-    expect([...first.areas].sort()).toEqual(['BA_DIEM', 'HOC_MON']);
+    expect([...first.areas].sort()).toEqual(['HOC_MON', 'QUAN_1']);
     // Sorted in JS: "area_code" is a Postgres enum, so ORDER BY follows the
     // enum's declaration order, not alphabetical order. The assertion is
     // about which rows persisted, not their order.
@@ -191,15 +191,15 @@ describeDatabase('Profile mutation concurrency with PostgreSQL (e2e)', () => {
       [...persisted].sort((left, right) =>
         left.areaCode.localeCompare(right.areaCode),
       ),
-    ).toEqual([{ areaCode: 'BA_DIEM' }, { areaCode: 'HOC_MON' }]);
+    ).toEqual([{ areaCode: 'HOC_MON' }, { areaCode: 'QUAN_1' }]);
 
-    const second = await profiles!.updateAreas(userId!, ['DONG_THANH']);
-    expect(second.areas).toEqual(['DONG_THANH']);
+    const second = await profiles!.updateAreas(userId!, ['QUAN_7']);
+    expect(second.areas).toEqual(['QUAN_7']);
     await expect(
       prisma!.userArea.findMany({
         where: { userId },
         select: { areaCode: true },
       }),
-    ).resolves.toEqual([{ areaCode: 'DONG_THANH' }]);
+    ).resolves.toEqual([{ areaCode: 'QUAN_7' }]);
   });
 });

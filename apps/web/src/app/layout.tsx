@@ -11,7 +11,7 @@ const beVietnamPro = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: 'ReGive — Chia sẻ để bền vững',
   description:
-    'Cộng đồng Hóc Môn kết nối người tặng, người nhận và tình nguyện viên.',
+    'Cộng đồng TP.HCM kết nối người tặng, người nhận và tình nguyện viên.',
 };
 
 export default function RootLayout({

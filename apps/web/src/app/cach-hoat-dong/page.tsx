@@ -5,7 +5,7 @@ import '@/styles/regive-app.css';
 
 export const metadata: Metadata = {
   title: 'Cách hoạt động — ReGive',
-  description: 'ReGive kết nối người tặng, người nhận và tình nguyện viên trong khu vực Hóc Môn hoạt động như thế nào.',
+  description: 'ReGive kết nối người tặng, người nhận và tình nguyện viên tại TP.HCM hoạt động như thế nào.',
 };
 
 export default function HowItWorksPage() {
@@ -19,14 +19,13 @@ export default function HowItWorksPage() {
           <p>
             ReGive là nơi những món đồ còn dùng tốt tìm được một mái nhà mới, thay vì bị
             bỏ đi. Không mua bán — chỉ có sự chia sẻ giữa những người hàng xóm trong cùng
-            khu vực Hóc Môn.
+            khu vực trên khắp TP.HCM.
           </p>
 
           <h2>1. Đăng món đồ</h2>
           <p>
-            Người tặng chụp ảnh, mô tả tình trạng món đồ và chọn khu vực phù hợp
-            (Hóc Môn, Bà Điểm, Xuân Thới Sơn hoặc Đông Thạnh). Mọi món đồ đăng lên đều
-            được chia sẻ miễn phí.
+            Người tặng chụp ảnh, mô tả tình trạng món đồ và chọn quận/huyện phù hợp trong
+            số 22 khu vực của TP.HCM. Mọi món đồ đăng lên đều được chia sẻ miễn phí.
           </p>
 
           <h2>2. Kết nối</h2>

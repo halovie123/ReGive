@@ -42,9 +42,9 @@ class MemoryFoundationDatabase {
   private readonly users = new Map<string, StoredUser>();
   private readonly activeAreas = new Map<AreaCode, boolean>([
     ['HOC_MON', true],
-    ['BA_DIEM', true],
-    ['XUAN_THOI_SON', true],
-    ['DONG_THANH', true],
+    ['QUAN_1', true],
+    ['QUAN_3', true],
+    ['QUAN_7', true],
   ]);
 
   get provisionedUserCount(): number {
@@ -289,7 +289,7 @@ describe('Foundation identity release gate (e2e)', () => {
     await request(app.getHttpServer())
       .put('/v1/me/areas')
       .set(authorization)
-      .send({ areas: ['HOC_MON', 'BA_DIEM'] })
+      .send({ areas: ['HOC_MON', 'QUAN_1'] })
       .expect(200);
 
     const complete = await request(app.getHttpServer())
@@ -315,7 +315,7 @@ describe('Foundation identity release gate (e2e)', () => {
       },
       roles: ['DONOR', 'RECIPIENT', 'VOLUNTEER'].sort(),
       activeRole: 'VOLUNTEER',
-      areas: ['BA_DIEM', 'HOC_MON'],
+      areas: ['HOC_MON', 'QUAN_1'],
     });
 
     // A JWT-only identity sync followed by five more authenticated calls

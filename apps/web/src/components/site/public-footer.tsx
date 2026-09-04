@@ -30,7 +30,7 @@ export function PublicFooter() {
         ))}
       </nav>
       <p className="public-footer-note">
-        ReGive — chia sẻ đồ dùng còn tốt trong khu vực Hóc Môn, TP.HCM. Không mua bán.
+        ReGive — chia sẻ đồ dùng còn tốt khắp TP.HCM. Không mua bán.
       </p>
     </footer>
   );

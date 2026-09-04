@@ -12,7 +12,7 @@ const FAQS = [
   {
     question: 'ReGive hoạt động ở khu vực nào?',
     answer:
-      'Hiện tại ReGive phục vụ 4 khu vực: Hóc Môn, Bà Điểm, Xuân Thới Sơn và Đông Thạnh. Bạn có thể chọn tối đa 4 khu vực hoạt động khi đăng ký.',
+      'ReGive phục vụ toàn bộ 22 quận/huyện của TP.HCM. Bạn có thể chọn tối đa 4 khu vực hoạt động khi đăng ký — nên chọn những nơi bạn thật sự đi lại được để việc trao nhận thuận tiện.',
   },
   {
     question: 'ReGive đăng nhập bằng cách nào?',

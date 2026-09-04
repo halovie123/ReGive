@@ -104,7 +104,9 @@ h2 { max-width: 640px; margin-bottom: 28px; font-size: clamp(2rem, 4vw, 3.2rem);
 .brand-lockup { display: inline-flex; align-items: center; gap: 12px; color: var(--regive-ink); }
 .brand-mark { width: 54px; height: 54px; flex: none; }
 .brand-copy { display: flex; flex-direction: column; line-height: 1; }
-.brand-name { color: var(--regive-green); font-size: 1.78rem; font-weight: 700; letter-spacing: -.045em; }
+.brand-name { font-size: 1.78rem; font-weight: 600; letter-spacing: -.02em; }
+.brand-name-re { color: #6FAF68; }
+.brand-name-give { color: #9CC96F; }
 .brand-tagline { margin-top: 7px; color: var(--regive-muted); font-size: .64rem; letter-spacing: .02em; }
 .brand-lockup[data-compact="true"] .brand-mark { width: 44px; height: 44px; }
 .brand-lockup[data-compact="true"] .brand-name { font-size: 1.5rem; }

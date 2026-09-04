@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AREA_CODES } from '@buy-nothing/contracts';
 import { OnboardingForm } from '@/features/onboarding/onboarding-form';
 import { submitOnboardingProfile } from '@/features/onboarding/onboarding-actions';
 
@@ -27,10 +28,20 @@ describe('OnboardingForm', () => {
     expect(
       screen.getByRole('checkbox', { name: /Tình nguyện viên/ }),
     ).toBeVisible();
+    // Every Ho Chi Minh City district is offered, not just the original
+    // four Hóc Môn communes — the form maps over AREA_CODES, so a dropped
+    // or renamed district shows up here.
     expect(screen.getByRole('checkbox', { name: 'Hóc Môn' })).toBeVisible();
-    expect(screen.getByRole('checkbox', { name: 'Bà Điểm' })).toBeVisible();
-    expect(screen.getByRole('checkbox', { name: 'Xuân Thới Sơn' })).toBeVisible();
-    expect(screen.getByRole('checkbox', { name: 'Đông Thạnh' })).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: 'Quận 1' })).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: 'TP. Thủ Đức' })).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: 'Cần Giờ' })).toBeVisible();
+    expect(
+      screen.getAllByRole('checkbox').filter((box) =>
+        AREA_CODES.includes(
+          (box as HTMLInputElement).value as (typeof AREA_CODES)[number],
+        ),
+      ),
+    ).toHaveLength(AREA_CODES.length);
     expect(screen.getByRole('button', { name: 'Hoàn tất đăng ký' })).toBeVisible();
   });
 

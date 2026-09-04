@@ -20,9 +20,9 @@ class MemoryProfilesDatabase {
   failNextUserRead = false;
   readonly areas = new Map<AreaCode, boolean>([
     ['HOC_MON', true],
-    ['BA_DIEM', false],
-    ['XUAN_THOI_SON', true],
-    ['DONG_THANH', true],
+    ['QUAN_1', false],
+    ['QUAN_3', true],
+    ['QUAN_7', true],
   ]);
 
   constructor() {
@@ -260,7 +260,7 @@ describe('ProfilesService', () => {
 
   it('rejects inactive and unknown areas without replacing existing areas', async () => {
     await expect(
-      service.updateAreas('user-1', ['BA_DIEM']),
+      service.updateAreas('user-1', ['QUAN_1']),
     ).rejects.toMatchObject({
       status: 422,
       response: { code: 'AREA_UNAVAILABLE' },
@@ -278,15 +278,11 @@ describe('ProfilesService', () => {
 
   it('replaces areas without duplicate assignments and returns the complete response', async () => {
     await expect(
-      service.updateAreas('user-1', [
-        'DONG_THANH',
-        'DONG_THANH',
-        'XUAN_THOI_SON',
-      ]),
+      service.updateAreas('user-1', ['QUAN_7', 'QUAN_7', 'QUAN_3']),
     ).resolves.toMatchObject({
       profile: null,
       roles: ['DONOR'],
-      areas: ['DONG_THANH', 'XUAN_THOI_SON'],
+      areas: ['QUAN_3', 'QUAN_7'],
     });
   });
 });
