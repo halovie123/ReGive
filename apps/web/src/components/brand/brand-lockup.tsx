@@ -19,27 +19,32 @@ export function BrandLockup({ className = '', compact = false }: BrandLockupProp
       data-compact={compact}
       aria-label="ReGive — Giving Sharing Sustaining"
     >
-      <svg className="brand-mark" viewBox="0 0 120 112" aria-hidden="true">
-        {/* right hand — mint, sweeping up and cradling the right lobe */}
-        <path
-          fill="#8FCBC4"
-          d="M62 104c17-13 33-25 41-41 7-14 5-30-6-38-7-5-16-5-22 1-4 4-6 9-6 15 0 5 2 9 5 13 2 3 3 6 2 9-1 4-5 6-9 5 3 6 3 13-1 19-1 2-3 4-4 6v11Z"
-        />
-        {/* right hand — palm/fingers detail */}
-        <path
-          fill="#8FCBC4"
-          d="M78 24c-8 3-13 10-14 19-1 6 1 12 5 17 2 3 2 7-1 9-2 2-6 2-8-1-6-8-8-18-5-27 3-11 12-19 23-17Z"
-          opacity=".55"
-        />
-        {/* left hand — sage green, mirrored */}
+      <svg className="brand-mark" viewBox="0 0 120 116" aria-hidden="true">
+        {/* Heart drawn as two thick cupped-hand strokes meeting at the point,
+            mirroring the source artwork rather than a solid heart. */}
+        <g fill="none" strokeLinecap="round" strokeWidth="14">
+          <path
+            stroke="#9CC96F"
+            d="M60 100C36 82 18 64 18 44c0-14 11-23 23-21 9 2 16 10 19 21"
+          />
+          <path
+            stroke="#8FCBC4"
+            d="M60 100c24-18 42-36 42-56 0-14-11-23-23-21-9 2-16 10-19 21"
+          />
+        </g>
+        {/* thumbs curling into the centre of the heart */}
         <path
           fill="#9CC96F"
-          d="M58 104C41 91 25 79 17 63 10 49 12 33 23 25c7-5 16-5 22 1 4 4 6 9 6 15 0 5-2 9-5 13-2 3-3 6-2 9 1 4 5 6 9 5-3 6-3 13 1 19 1 2 3 4 4 6v11Z"
+          d="M40 40c7-1 13 3 16 10-5 2-9 1-12-2-2-2-3-5-4-8Z"
+        />
+        <path
+          fill="#8FCBC4"
+          d="M80 40c-7-1-13 3-16 10 5 2 9 1 12-2 2-2 3-5 4-8Z"
         />
         {/* recycling arrow sweeping over the top of the heart */}
         <path
           fill="#8CC152"
-          d="M34 30c5-9 14-15 25-16l-4-6 20 5-13 16-1-8c-11 1-20 6-25 15-1 2-3 2-3 0Z"
+          d="M35 30c6-11 17-18 30-19l-2-8 19 13-18 11 1-8c-10 1-19 6-25 14-2 2-6 0-5-3Z"
         />
       </svg>
       <span className="brand-copy">
