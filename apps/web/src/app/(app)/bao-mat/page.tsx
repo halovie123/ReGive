@@ -21,8 +21,8 @@ export default async function AccountSecurityPage() {
 
       <dl className="account-grid">
         <div className="account-field">
-          <dt>Số điện thoại</dt>
-          <dd>{me.phoneLast4 ? `•••• ${me.phoneLast4}` : 'Chưa xác nhận'}</dd>
+          <dt>Đăng nhập bằng</dt>
+          <dd>Google hoặc Facebook</dd>
         </div>
         <div className="account-field">
           <dt>Tên hiển thị</dt>

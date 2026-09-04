@@ -13,7 +13,7 @@ import '@/styles/regive-app.css';
 
 export const metadata: Metadata = {
   title: 'Đăng nhập — ReGive',
-  description: 'Đăng nhập ReGive bằng Google, Facebook hoặc số điện thoại.',
+  description: 'Đăng nhập ReGive bằng Google hoặc Facebook.',
 };
 
 async function getSignedInMe(): Promise<MeResponse | null> {

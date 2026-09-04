@@ -15,9 +15,9 @@ const FAQS = [
       'Hiện tại ReGive phục vụ 4 khu vực: Hóc Môn, Bà Điểm, Xuân Thới Sơn và Đông Thạnh. Bạn có thể chọn tối đa 4 khu vực hoạt động khi đăng ký.',
   },
   {
-    question: 'Vì sao tôi cần xác thực số điện thoại?',
+    question: 'ReGive đăng nhập bằng cách nào?',
     answer:
-      'Xác thực số điện thoại giúp cộng đồng ReGive an toàn và đáng tin cậy hơn, hạn chế tài khoản giả mạo.',
+      'Bạn đăng nhập bằng tài khoản Google hoặc Facebook sẵn có. ReGive không bao giờ nhận hay lưu mật khẩu của bạn, và cũng không yêu cầu số điện thoại.',
   },
   {
     question: 'Tôi có thể vừa là người tặng vừa là người nhận không?',

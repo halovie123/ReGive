@@ -30,9 +30,10 @@ export default function TermsPage() {
 
           <h2>2. Tài khoản</h2>
           <p>
-            Mỗi người dùng cần xác thực số điện thoại để tạo tài khoản. Bạn chịu trách
-            nhiệm về mọi hoạt động diễn ra dưới tài khoản của mình và cần giữ thông tin
-            đăng nhập an toàn.
+            Bạn tạo tài khoản bằng cách đăng nhập với Google hoặc Facebook. Tài khoản dành
+            cho người từ 18 tuổi trở lên; người chưa đủ tuổi cần có phụ huynh hoặc người
+            giám hộ đại diện. Bạn chịu trách nhiệm về mọi hoạt động diễn ra dưới tài khoản
+            của mình và cần giữ thông tin đăng nhập an toàn.
           </p>
 
           <h2>3. Nội dung đăng tải</h2>

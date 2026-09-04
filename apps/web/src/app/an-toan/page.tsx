@@ -17,8 +17,9 @@ export default function SafetyPage() {
         <h1>An toàn</h1>
         <div className="policy-body">
           <p>
-            ReGive xác thực số điện thoại của mọi thành viên trước khi họ có thể trao đổi
-            hoặc nhắn tin, nhưng an toàn khi gặp mặt trực tiếp vẫn cần sự cẩn trọng của
+            Mọi thành viên đăng nhập bằng tài khoản Google hoặc Facebook của mình. Điều
+            đó giúp hạn chế tài khoản ảo, nhưng ReGive không thể xác minh danh tính ngoài
+            đời của bất kỳ ai — an toàn khi gặp mặt trực tiếp vẫn cần sự cẩn trọng của
             chính bạn.
           </p>
 

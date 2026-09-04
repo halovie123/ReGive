@@ -23,7 +23,6 @@ export default function PrivacyPage() {
 
           <h2>Thông tin chúng tôi thu thập</h2>
           <ul>
-            <li>Số điện thoại, đã xác thực qua mã OTP, dùng để định danh tài khoản.</li>
             <li>Tên hiển thị, giới thiệu ngắn và ảnh đại diện bạn tự cung cấp.</li>
             <li>Vai trò (người tặng, người nhận, tình nguyện viên) và khu vực hoạt động.</li>
             <li>
@@ -34,9 +33,10 @@ export default function PrivacyPage() {
 
           <h2>Cách chúng tôi bảo vệ dữ liệu</h2>
           <p>
-            Số điện thoại của bạn được mã hóa khi lưu trữ. Chúng tôi chỉ hiển thị 4 số
-            cuối cho mục đích xác minh, và không hiển thị số điện thoại đầy đủ cho các
-            thành viên khác.
+            ReGive không thu thập số điện thoại của bạn. Phiên đăng nhập được lưu bằng
+            cookie phía máy chủ, không lưu trong trình duyệt, và mọi dữ liệu truyền đi đều
+            qua kết nối HTTPS được mã hóa. Địa chỉ nhà riêng của bạn không bao giờ được
+            hiển thị công khai — chỉ hiển thị tên xã bạn chọn.
           </p>
 
           <h2>Cách chúng tôi sử dụng dữ liệu</h2>

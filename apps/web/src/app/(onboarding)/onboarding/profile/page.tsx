@@ -26,11 +26,6 @@ export default async function OnboardingProfilePage() {
 
   return (
     <main className="onboarding-page">
-      <p className="onboarding-progress">
-        <span>1. Số điện thoại</span>
-        <span data-active="true">2. Hồ sơ</span>
-      </p>
-
       <div className="auth-card">
         <div>
           <h1>Hoàn tất hồ sơ của bạn</h1>
