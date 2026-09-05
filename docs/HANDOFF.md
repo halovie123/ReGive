@@ -76,7 +76,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 
 ### Bí mật / thông tin nhạy cảm
 - `apps/api/.env` (đã gitignore) chứa credential Supabase **thật**. Đừng in ra, đừng commit.
-- Chủ dự án đã dán `service_role key` + mật khẩu DB vào lịch sử chat → **nên rotate cả hai trong Supabase Dashboard**, rồi cập nhật lại biến môi trường trên Render.
+- Đây là **repo công khai** — không bao giờ ghi giá trị bí mật thật vào bất kỳ file nào trong repo, kể cả tài liệu.
+- Định kỳ rotate `SUPABASE_SERVICE_ROLE_KEY` và mật khẩu database trong Supabase Dashboard, rồi cập nhật biến môi trường trên Render. Trao đổi chi tiết vận hành qua kênh riêng, không qua repo.
 
 ---
 
