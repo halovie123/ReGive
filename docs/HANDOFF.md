@@ -71,8 +71,24 @@ Mỗi mảng do một agent độc lập soi, có tấn công/đo đạc thật 
 - `docs/runbooks/auth-provider-setup.md` vẫn hướng dẫn mua SMS gateway (Twilio), trỏ tới `apps/web/src/lib/phone.ts` (file đã xoá) và route `/onboarding/phone` (đã xoá). **Nguy hiểm thật**: người sau sẽ mua gateway vô ích và bật provider SMS → thành mục tiêu SMS-pumping.
 - `docs/runbooks/local-development.md:89-91` vẫn ghi 4 khu vực Hóc Môn, chưa nhắc migration thứ 3.
 
+### Cần bạn (chủ sản phẩm) quyết, không phải lỗi kỹ thuật
+- **Tagline "Giving Sharing Sustaining" đang là tiếng Anh** trên một sản phẩm thuần Việt (`brand-lockup.tsx`), và nằm cả trong `aria-label` nên screen reader tiếng Việt đọc phải một cụm tiếng Anh ở mọi trang. Tôi **cố ý không tự đổi**: đó là tagline trong file logo bạn đã duyệt, đổi là đổi nhận diện thương hiệu — quyết định của bạn, không phải của tôi. Nếu muốn Việt hoá, cần sửa cả phần chữ hiển thị lẫn `aria-label`.
+- **Vai trò của `POST /v1/identity/sync-phone`**: endpoint vẫn sống và gọi được (chỉ sau `JwtAuthGuard`), thực hiện mã hoá + gọi Supabase Admin API, nhưng **không luồng nào trong sản phẩm hiện tại gọi tới được** vì đã bỏ xác minh SĐT. Giữ lại để sau này bật lại, hay xoá bớt bề mặt tấn công? Cần bạn xác nhận.
+
+### Bảo mật mức thấp (chưa khai thác được, nên siết cho chắc)
+- `resolveOrigin()` trong `apps/web/src/features/auth/auth-actions.ts:9-15` tin header `x-forwarded-host` để dựng `redirectTo` của OAuth. Hai agent độc lập cùng nêu. **Chưa khai thác được** vì Vercel ghi đè header này ở edge, Server Action của Next có kiểm tra Origin, và Supabase có allowlist redirect — nhưng allowlist của Supabase đang là lớp bảo vệ **duy nhất**. Nên ưu tiên `NEXT_PUBLIC_SITE_URL` thay vì tin header.
+- **Access token vẫn sống tới khi hết hạn (~1h) sau khi "đăng xuất mọi thiết bị"**. `signOutEverywhere` thu hồi refresh token, nhưng API chỉ kiểm chữ ký/issuer/audience/hạn dùng, không đối chiếu `session_id` với Supabase. Đây là bản chất của JWT không trạng thái, không phải lỗi — nhưng cần biết: token bị lộ không thể huỷ giữa chừng.
+- `NODE_ENV` chỉ có tác dụng ở đúng một chỗ (chặn `ALLOW_INSECURE_SUPABASE_HTTP` ở production), và CI đặt `NODE_ENV: development` nên nhánh production của kiểm tra đó **chưa bao giờ được chạy thật**. Nên set `NODE_ENV=production` rõ ràng trên Render thay vì tin mặc định của nền tảng.
+
 ### Chất lượng
 - **Lỗ hổng test còn lại**: đổi `orderBy` từ `asc` sang `desc` trong `profiles.service.ts` không làm đỏ một test nào (89/89 vẫn xanh) — vì mọi tầng test đều sort lại trước khi so sánh, do contract cố tình không cam kết thứ tự. Nhưng `/bao-mat` đang hiển thị `me.areas.join(', ')` thẳng cho người dùng. Nên thêm 1 test chạy trên Postgres thật khoá lại thứ tự enum thực tế (ví dụ `QUAN_8` vs `QUAN_10` — nơi thứ tự khai báo và bảng chữ cái khác nhau).
+- `(app)/loading.tsx` và `(app)/error.tsx` chưa có test nào. Cả hai đều đơn giản, không có nhánh logic, nên đây là thiếu sót nhỏ — nhưng đúng loại thứ mà ảnh chụp bắt được còn unit test thì không.
+- `MIN_AREAS`/`MAX_AREAS` bị khai báo trùng ở 2 nơi (`packages/contracts/src/profile.ts` và `apps/api/src/modules/profiles/profiles.service.ts`, xem lý do ở mục 5) mà **không có test nào khẳng định chúng khớp nhau**. Nếu đổi một bên quên bên kia, không có gì báo.
+
+### Rác còn sót từ scaffold
+- `GET /v1/` vẫn trả `"Hello World!"` (`apps/api/src/app.controller.ts`), và `app.controller.spec.ts` đang test đúng cái đó — test không sai, nhưng nó bảo vệ một endpoint vô nghĩa.
+- `apps/api/README.md` vẫn là README mặc định của NestJS.
+- `apps/web/public/` còn `next.svg`, `vercel.svg`, `file.svg`, `globe.svg`, `window.svg` — ảnh mẫu của Next, không dùng tới.
 - `scripts/ensure-contracts-built.mjs`: `LOCK_WAIT_TIMEOUT_MS` (180s) **nhỏ hơn** `LOCK_STALE_AFTER_MS` (300s) → build bị SIGKILL khi đang giữ lock sẽ làm lần build kế tiếp fail chắc chắn 1 lần. Đổi stale xuống 120s.
 - `API_BASE_URL` sai/thiếu sẽ fail âm thầm (fallback về localhost, `safeGetMe` nuốt lỗi). Nên throw khi thiếu ở production.
 - `onboarding-form.tsx`: mỗi lần đăng ký **thành công** đều tạo unhandled promise rejection (Next reject action promise khi redirect, react-hook-form ném lại). Người dùng không bị ảnh hưởng nhưng log lỗi sẽ có false positive ở đúng luồng thành công.
