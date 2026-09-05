@@ -1,6 +1,10 @@
 services:
   postgres:
-    image: postgres:18-alpine
+    # Pinned to 17 to match the deployed Supabase instance (17.6). Testing
+    # on 18 while production runs 17 risks behaviour that passes locally
+    # and fails live — or the reverse. Bump this only together with the
+    # production database.
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: regive
       POSTGRES_USER: regive

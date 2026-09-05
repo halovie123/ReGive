@@ -9,7 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:18-alpine
+        # Matches the deployed Supabase instance (17.6) and
+        # infra/docker-compose.yml. Keep all three in step.
+        image: postgres:17-alpine
         env:
           POSTGRES_DB: regive_identity_ci
           POSTGRES_USER: regive
