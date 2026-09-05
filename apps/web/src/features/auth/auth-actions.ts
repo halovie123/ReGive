@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getMe } from '@/lib/api/server-fetch';
+import { safeGetMe } from '@/lib/api/server-fetch';
 import { nextOnboardingStep } from '@/lib/onboarding-step';
 import { createClient } from '@/lib/supabase/server';
 
@@ -54,8 +54,15 @@ export async function completeSignInRedirect(): Promise<never> {
     return redirect('/login');
   }
 
-  const me = await getMe();
-  return redirect(nextOnboardingStep(me));
+  // safeGetMe, not getMe: this runs in the OAuth callback route, which has
+  // no try/catch and no error boundary. A throw here (API cold-starting on
+  // Render, 5xx, JWKS drift) would show a brand-new user Next's raw English
+  // "Application error" as the very first screen after granting Google
+  // consent — and the single-use OAuth code is already spent, so they
+  // cannot retry the link. Falling through to /trang-chu lands them in the
+  // app shell's friendly Vietnamese error state with a sign-out escape.
+  const me = await safeGetMe();
+  return redirect(me ? nextOnboardingStep(me) : '/trang-chu');
 }
 
 /** Revokes every session for this user (all providers, all devices). */

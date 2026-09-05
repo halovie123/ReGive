@@ -1,0 +1,45 @@
+fix: survive a sleeping API instead of a blank tab or an English crash
+
+The API runs on Render's free tier and sleeps after ~15 min idle. A cold
+start was measured at 42.5s (TTFB; TLS connect was 0.12s, so it is all
+container boot). Anonymous visitors are unaffected — the public site is
+statically prerendered at Vercel's edge and never touches the API — but
+every signed-in member returning after a break hit the worst experience
+the app produces.
+
+Four independent gaps made that worse than it had to be:
+
+1. apiFetch had no timeout, so undici waited its 300s default and Vercel
+   held the request open. Now bounded at 60s, above a worst-case wake, so
+   a genuine outage surfaces the app shell's error state instead of
+   hanging. Timeouts and connection failures now map to typed Vietnamese
+   ApiProblems rather than raw TypeErrors.
+
+2. There was no loading.tsx anywhere, so Next had no Suspense boundary and
+   could not flush any HTML while the layout awaited /v1/me — 42 seconds
+   of blank white tab with no feedback. Added (app)/loading.tsx, which
+   streams immediately and tells the user the server is waking and not to
+   reload.
+
+3. completeSignInRedirect used the throwing getMe(). In the OAuth callback
+   route — no try/catch, no error boundary — that meant a brand-new user's
+   first screen after granting Google consent could be Next's raw English
+   "Application error", with the single-use OAuth code already spent so
+   the link could not be retried. Now uses safeGetMe() and falls through
+   to /trang-chu's friendly error state.
+
+4. The inline role-switcher Server Action called apiFetch bare. One failed
+   role switch replaced the whole app shell with the default error page.
+   Now caught; the switcher simply snaps back.
+
+Also added (app)/error.tsx. Next skips unchanged layout segments on
+client-side navigation, so the layout's own error state never rendered for
+a /v1/me failure during a soft nav between /trang-chu and /bao-mat — the
+escape hatch added in an earlier round was unreachable exactly when it was
+needed. The boundary renders inside the layout, keeping the shell intact.
+
+Found by an audit that measured the cold start rather than assuming it,
+and which corrected my own wrong premise that anonymous visitors were
+affected.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

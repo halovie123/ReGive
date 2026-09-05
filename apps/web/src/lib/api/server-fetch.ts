@@ -36,6 +36,18 @@ const NO_SESSION_PROBLEM: ApiProblem = {
   correlationId: 'web-no-session',
 };
 
+const TIMEOUT_PROBLEM: ApiProblem = {
+  code: 'API_TIMEOUT',
+  message: 'Máy chủ phản hồi quá lâu. Vui lòng thử lại.',
+  correlationId: 'web-api-timeout',
+};
+
+const UNREACHABLE_PROBLEM: ApiProblem = {
+  code: 'API_UNREACHABLE',
+  message: 'Không kết nối được máy chủ. Vui lòng thử lại.',
+  correlationId: 'web-api-unreachable',
+};
+
 /**
  * BFF fetch helper: reads the caller's Supabase session on the server and
  * forwards it as a bearer token to the NestJS API. Never exposes the token
@@ -51,15 +63,30 @@ export async function apiFetch<T = unknown>(
     throw new ApiProblemError(NO_SESSION_PROBLEM);
   }
 
-  const response = await fetch(`${apiBaseUrl()}${path}`, {
-    ...init,
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-      ...init.headers,
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}${path}`, {
+      ...init,
+      cache: 'no-store',
+      // The API runs on Render's free tier, which sleeps after ~15 minutes
+      // idle; a cold start was measured at 42s. Without a bound, undici
+      // would wait its 300s default and Vercel would hold the request open
+      // that whole time. 60s clears a worst-case wake while still turning a
+      // genuine outage into the app shell's error state rather than a hang.
+      signal: init.signal ?? AbortSignal.timeout(60_000),
+      headers: {
+        'Content-Type': 'application/json',
+        ...init.headers,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (error) {
+    throw new ApiProblemError(
+      (error as Error)?.name === 'TimeoutError'
+        ? TIMEOUT_PROBLEM
+        : UNREACHABLE_PROBLEM,
+    );
+  }
 
   const body: unknown = await response.json().catch(() => undefined);
 

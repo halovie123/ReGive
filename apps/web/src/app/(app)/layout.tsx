@@ -24,10 +24,19 @@ async function updateActiveRoleAction(formData: FormData) {
   const activeRole = String(formData.get('activeRole') ?? '');
   if (!USER_ROLES.includes(activeRole as UserRole)) return;
 
-  await apiFetch('/me/active-role', {
-    method: 'PUT',
-    body: JSON.stringify({ activeRole }),
-  });
+  try {
+    await apiFetch('/me/active-role', {
+      method: 'PUT',
+      body: JSON.stringify({ activeRole }),
+    });
+  } catch {
+    // Swallow deliberately. An unhandled throw out of a Server Action with
+    // no error boundary replaces the whole app shell with Next's default
+    // error page — losing the user's session view over a role dropdown.
+    // The revalidate below re-renders with the unchanged role, so the
+    // switcher simply snaps back and the user can retry.
+    return;
+  }
 
   revalidatePath('/trang-chu');
   revalidatePath('/bao-mat');

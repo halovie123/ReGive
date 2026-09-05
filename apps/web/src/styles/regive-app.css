@@ -440,3 +440,19 @@
     z-index: 20;
   }
 }
+
+/* Streamed by (app)/loading.tsx while the layout awaits GET /v1/me. The
+   API sleeps on Render's free tier; a cold start was measured at 42s, so
+   this replaces what would otherwise be a blank white tab. */
+.app-loading { max-width: 560px; margin: 96px auto; padding: 0 24px; text-align: center; }
+.app-loading-title { margin: 0 0 10px; color: var(--regive-ink); font-size: 1.15rem; font-weight: 600; }
+.app-loading-note { margin: 0 0 24px; color: var(--regive-muted); font-size: .92rem; line-height: 1.6; }
+.app-loading-bar { overflow: hidden; height: 4px; border-radius: 999px; background: rgb(111 175 104 / 15%); }
+.app-loading-bar span { display: block; width: 40%; height: 100%; border-radius: 999px; background: var(--regive-green); animation: app-loading-slide 1.4s ease-in-out infinite; }
+@keyframes app-loading-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-loading-bar span { animation: none; width: 100%; opacity: .5; }
+}
