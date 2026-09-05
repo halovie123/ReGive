@@ -28,7 +28,36 @@ async function getSignedInMe(): Promise<MeResponse | null> {
   return safeGetMe();
 }
 
-export default async function LoginPage() {
+/**
+ * Four call sites redirect here with ?error=... — signInWithOAuth failing
+ * to start, the provider returning an error_description, a missing code,
+ * and a failed code exchange. Until now the page ignored searchParams
+ * entirely, so a user who declined the Google/Facebook consent screen (or
+ * hit a provider hiccup) landed back on an unchanged login page with no
+ * explanation, clicked the same button, and bounced again.
+ *
+ * The provider's own error_description is deliberately NOT shown: it is
+ * untrusted, English, and can be attacker-influenced via the callback URL.
+ */
+function loginErrorMessage(code: string | undefined): string | null {
+  if (!code) return null;
+  if (code === 'oauth_start_failed') {
+    return 'Không mở được trang đăng nhập của nhà cung cấp. Vui lòng thử lại.';
+  }
+  if (code === 'missing_code') {
+    return 'Phiên đăng nhập đã hết hạn hoặc bị huỷ. Vui lòng đăng nhập lại.';
+  }
+  return 'Đăng nhập không thành công. Vui lòng thử lại.';
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const errorMessage = loginErrorMessage(error);
+
   // Supabase isn't configured in this environment (e.g. local dev without
   // credentials yet): skip the already-signed-in check entirely rather
   // than crash — /login must always be reachable, same fail-open
@@ -46,6 +75,11 @@ export default async function LoginPage() {
         ← Về trang chủ ReGive
       </Link>
       <BrandLockup compact />
+      {errorMessage && (
+        <p className="auth-status" data-tone="error" role="alert">
+          {errorMessage}
+        </p>
+      )}
       <LoginForm />
       <PublicFooter />
     </main>

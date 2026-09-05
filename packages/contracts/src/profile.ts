@@ -14,8 +14,16 @@ export const UpdateActiveRoleSchema = z.object({
   activeRole: UserRoleSchema,
 });
 
+/**
+ * How many service areas one member may claim. Exported so the API's
+ * service-level backstop, the web form's live counter, and this schema all
+ * read the same number instead of hard-coding it three times.
+ */
+export const MIN_AREAS = 1;
+export const MAX_AREAS = 4;
+
 export const UpdateAreasSchema = z.object({
-  areas: z.array(AreaCodeSchema).min(1).max(4),
+  areas: z.array(AreaCodeSchema).min(MIN_AREAS).max(MAX_AREAS),
 });
 
 export const MeResponseSchema = z.object({

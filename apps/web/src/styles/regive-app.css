@@ -96,7 +96,7 @@
 }
 
 .auth-status[data-tone="success"] {
-  color: var(--regive-green);
+  color: var(--regive-green-text);
   font-size: .85rem;
 }
 
@@ -169,7 +169,7 @@
 }
 
 .public-footer-nav a:hover {
-  color: var(--regive-green);
+  color: var(--regive-green-text);
 }
 
 .public-footer-note {
@@ -250,8 +250,20 @@
   gap: 0;
 }
 
+/* Hide the label visually but keep it in the accessibility tree.
+   `display: none` removed it from accessible-name computation entirely,
+   leaving the role <select> with no name at all — a screen-reader user
+   heard only the role options with no idea what the control was. */
 .role-switcher .field-label {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .role-switcher .field-control {
@@ -363,7 +375,7 @@
 }
 
 .onboarding-progress [data-active="true"] {
-  color: var(--regive-green);
+  color: var(--regive-green-text);
 }
 
 .field-group {
@@ -455,4 +467,14 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .app-loading-bar span { animation: none; width: 100%; opacity: .5; }
+}
+
+/* Inline links inside prose were indistinguishable from body text: the
+   global reset sets `a { color: inherit; text-decoration: none }`, so a
+   reader could not tell what was clickable without hovering (WCAG 1.4.1,
+   Use of Color). Restore an underline inside long-form content only. */
+.policy-body a,
+.faq-answer a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

@@ -6,6 +6,17 @@ import { PublicApiException } from '../../common/http/public-api.exception';
 
 type DatabaseClient = PrismaService | Prisma.TransactionClient;
 
+/**
+ * Mirrors UpdateAreasSchema's .min()/.max() in @buy-nothing/contracts.
+ * Declared locally rather than imported: contracts ships ESM from dist/,
+ * which this package's unit-test jest config (rootDir: src) cannot
+ * transform, and a value import here breaks the whole suite. The contract
+ * is still the edge validation; these are the service's own backstop, and
+ * the e2e suite exercises both together.
+ */
+const MIN_AREAS = 1;
+const MAX_AREAS = 4;
+
 @Injectable()
 export class ProfilesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -78,6 +89,21 @@ export class ProfilesService {
 
   async updateAreas(userId: string, areas: AreaCode[]): Promise<MeResponse> {
     const uniqueAreas = [...new Set(areas)];
+
+    // Defence in depth. UpdateAreasSchema caps this at 4 and the controller
+    // parses through it, so today no request reaches here over the limit —
+    // but that leaves the cap enforced in exactly one place. Any future
+    // internal caller (admin tool, backfill, another controller) that skips
+    // the schema would silently persist an unbounded selection. Cheap to
+    // assert here; the DB has no constraint to fall back on.
+    if (uniqueAreas.length < MIN_AREAS || uniqueAreas.length > MAX_AREAS) {
+      throw new PublicApiException(
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        'AREA_SELECTION_INVALID',
+        `Chọn từ ${MIN_AREAS} đến ${MAX_AREAS} khu vực.`,
+      );
+    }
+
     return this.prisma.$transaction(async (transaction) => {
       await this.lockUserMutation(userId, transaction);
       await this.lockActiveAreas(uniqueAreas, transaction);

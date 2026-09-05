@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
   AREA_CODES,
+  MAX_AREAS,
   USER_ROLES,
   UpdateAreasSchema,
   UpdateProfileSchema,
@@ -29,6 +30,7 @@ const OnboardingSchema = z.object({
 
 type OnboardingValues = z.infer<typeof OnboardingSchema>;
 
+
 /**
  * Collects the profile, roles and areas needed to finish onboarding, then
  * calls submitOnboardingProfile (which redirects to /trang-chu on
@@ -40,11 +42,14 @@ export function OnboardingForm() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<OnboardingValues>({
     resolver: zodResolver(OnboardingSchema),
     defaultValues: { displayName: '', bio: '', roles: [], areas: [] },
   });
+
+  const selectedAreas = watch('areas') ?? [];
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -84,16 +89,31 @@ export function OnboardingForm() {
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Khu vực hoạt động (tối đa 4)</legend>
+        <legend>Khu vực hoạt động (tối đa {MAX_AREAS})</legend>
+        {/* With 22 districts the limit is no longer self-evident the way it
+            was with four, so show the count live and stop accepting a fifth
+            box rather than letting the user tick freely and only learn the
+            rule from a validation error after submitting. */}
+        <p className="field-help" aria-live="polite">
+          Đã chọn {selectedAreas.length}/{MAX_AREAS}
+          {selectedAreas.length >= MAX_AREAS && ' — bỏ chọn một khu vực để đổi sang khu vực khác.'}
+        </p>
         <div className="checkbox-options">
           {AREA_CODES.map((area) => (
             <label key={area} className="checkbox-option">
-              <input type="checkbox" value={area} {...register('areas')} />
+              <input
+                type="checkbox"
+                value={area}
+                disabled={selectedAreas.length >= MAX_AREAS && !selectedAreas.includes(area)}
+                {...register('areas')}
+              />
               {AREA_LABELS[area]}
             </label>
           ))}
         </div>
-        {errors.areas && <span className="field-error">Chọn ít nhất một khu vực (tối đa 4).</span>}
+        {errors.areas && (
+          <span className="field-error">Chọn ít nhất một khu vực (tối đa {MAX_AREAS}).</span>
+        )}
       </fieldset>
 
       {submitError && (

@@ -36,7 +36,7 @@ export default function PrivacyPage() {
             ReGive không thu thập số điện thoại của bạn. Phiên đăng nhập được lưu bằng
             cookie phía máy chủ, không lưu trong trình duyệt, và mọi dữ liệu truyền đi đều
             qua kết nối HTTPS được mã hóa. Địa chỉ nhà riêng của bạn không bao giờ được
-            hiển thị công khai — chỉ hiển thị tên xã bạn chọn.
+            hiển thị công khai — chỉ hiển thị tên quận/huyện bạn chọn.
           </p>
 
           <h2>Cách chúng tôi sử dụng dữ liệu</h2>

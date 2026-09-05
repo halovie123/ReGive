@@ -9,7 +9,8 @@ export type PublicProblemCode =
   | 'IDENTITY_PROVIDER_UNAVAILABLE'
   | 'INVALID_INPUT'
   | 'ROLE_NOT_ASSIGNED'
-  | 'AREA_UNAVAILABLE';
+  | 'AREA_UNAVAILABLE'
+  | 'AREA_SELECTION_INVALID';
 
 export type PublicProblem = {
   code: PublicProblemCode;
