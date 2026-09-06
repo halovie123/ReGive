@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
-import { EncryptionService } from '../../common/security/encryption.service';
 import { PrismaModule } from '../../common/prisma/prisma.module';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { IdentityController } from './identity.controller';
 import { IdentityVerifier } from './identity-verifier';
 import { IDENTITY_USER_STORE } from './identity-user.store';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -11,24 +9,22 @@ import {
   JwtCryptographicVerifier,
   SupabaseIdentityVerifier,
 } from './supabase-identity.verifier';
-import {
-  ADMIN_FETCH,
-  ADMIN_REQUEST_SIGNAL_FACTORY,
-  type AdminFetch,
-  defaultAdminRequestSignalFactory,
-  SupabaseUserAdmin,
-} from './supabase-user-admin';
-import { VerifiedPhoneGuard } from './verified-phone.guard';
 
-const adminFetch: AdminFetch = (url, init) => globalThis.fetch(url, init);
-
+/**
+ * Identity is authentication only: verify the Supabase JWT, map its subject
+ * to a local user, refuse suspended accounts. There is no controller — the
+ * module's single public surface is JwtAuthGuard.
+ *
+ * It used to also own phone/OTP verification (VerifiedPhoneGuard, the
+ * POST /v1/identity/sync-phone endpoint, a Supabase Admin adapter and
+ * AES-256-GCM phone encryption). All of that was removed when phone sign-in
+ * was dropped for cost reasons — see docs/superpowers/plans, "Amendments
+ * after Plan 1 shipped".
+ */
 @Module({
   imports: [PrismaModule],
-  controllers: [IdentityController],
   providers: [
-    EncryptionService,
     JwtAuthGuard,
-    VerifiedPhoneGuard,
     JoseRemoteJwtVerifier,
     {
       provide: JwtCryptographicVerifier,
@@ -36,22 +32,8 @@ const adminFetch: AdminFetch = (url, init) => globalThis.fetch(url, init);
     },
     SupabaseIdentityVerifier,
     { provide: IdentityVerifier, useExisting: SupabaseIdentityVerifier },
-    SupabaseUserAdmin,
-    {
-      provide: ADMIN_FETCH,
-      useValue: adminFetch,
-    },
-    {
-      provide: ADMIN_REQUEST_SIGNAL_FACTORY,
-      useValue: defaultAdminRequestSignalFactory,
-    },
     { provide: IDENTITY_USER_STORE, useExisting: PrismaService },
   ],
-  exports: [
-    JwtAuthGuard,
-    VerifiedPhoneGuard,
-    IdentityVerifier,
-    IDENTITY_USER_STORE,
-  ],
+  exports: [JwtAuthGuard, IdentityVerifier, IDENTITY_USER_STORE],
 })
 export class IdentityModule {}

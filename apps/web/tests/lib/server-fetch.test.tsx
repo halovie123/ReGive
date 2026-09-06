@@ -20,8 +20,6 @@ function mockSession(accessToken: string | null) {
 
 const VALID_ME = {
   id: 'user-1',
-  phoneVerified: false,
-  phoneLast4: null,
   profile: { displayName: 'Lan', bio: '', avatarKey: null },
   roles: ['DONOR'],
   activeRole: 'DONOR',

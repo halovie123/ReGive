@@ -22,10 +22,10 @@ under **Project Settings → API**:
   (web). Example: `https://abcdefghijklmnop.supabase.co`.
 - **anon public key** → `SUPABASE_ANON_KEY` (API) and
   `NEXT_PUBLIC_SUPABASE_ANON_KEY` (web).
-- **service_role secret key** → `SUPABASE_SERVICE_ROLE_KEY` (API only —
-  never send this to the browser/web app). It is what
-  `SupabaseUserAdmin` (`apps/api/src/modules/identity/supabase-user-admin.ts`)
-  uses to read a user's confirmed phone number.
+- **service_role secret key** — not needed. The API verifies JWTs against
+  the public JWKS and holds no privileged Supabase credential. It was
+  required only by the phone/OTP sign-in path, which has been removed. Do
+  not put a service_role key in any environment for this project.
 
 Derive `SUPABASE_JWKS_URL` from the project URL:
 
@@ -123,7 +123,7 @@ files created from the `.env.example` templates (see
 | Project URL | `SUPABASE_URL` | `NEXT_PUBLIC_SUPABASE_URL` |
 | Project URL + `/auth/v1/.well-known/jwks.json` | `SUPABASE_JWKS_URL` | — |
 | anon public key | `SUPABASE_ANON_KEY` | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
-| service_role secret key | `SUPABASE_SERVICE_ROLE_KEY` | — (never expose to web) |
+| service_role secret key | — (not used by this project) | — (never expose to web) |
 
 `apps/web/.env.local` also needs `API_BASE_URL` pointing at the running API
 (default `http://127.0.0.1:3001/v1` for local dev — see

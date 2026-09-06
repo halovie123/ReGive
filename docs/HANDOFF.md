@@ -50,9 +50,9 @@ Mỗi mảng do một agent độc lập soi, có tấn công/đo đạc thật 
 
 ## 3. Bẫy quan trọng cần biết trước khi sửa gì
 
-1. **`VerifiedPhoneGuard` là bẫy khoá tài khoản.** Vì đã bỏ xác minh SĐT, không ai có thể có `phoneVerifiedAt`. Gắn guard này vào endpoint mới (rất dễ xảy ra khi xây chức năng đăng đồ) → **100% người dùng bị 403 vĩnh viễn**, và unit test vẫn xanh vì test tự set `phoneVerified: true`. Nên xoá guard hoặc thêm test khẳng định nó gắn vào 0 route.
+1. ~~**`VerifiedPhoneGuard` là bẫy khoá tài khoản.**~~ **ĐÃ XỬ LÝ (2026-09-06).** Toàn bộ đường phone đã bị xoá: guard, `POST /v1/identity/sync-phone`, `SupabaseUserAdmin`, `EncryptionService`, hai trường phone trong `MeResponse`, `phoneVerified` trong `CurrentUser`, và bốn cột phone trong DB (migration `20260906000000_drop_phone_verification`). Dựng lại cổng phone giờ **fail typecheck ngay** (`Property 'phoneVerified' does not exist on type 'CurrentUser'`).
 
-2. **Không rotate được khoá mã hoá PII.** Cột `phoneEncryptionKeyVersion` chỉ để trang trí — không code nào đọc. Đổi giá trị `PII_ENCRYPTION_KEY_V1` mà chưa mã hoá lại dữ liệu = **mất vĩnh viễn** mọi số điện thoại đã lưu, và không có lỗi nào báo vì hiện chưa nơi nào gọi `decrypt()`.
+2. ~~**Không rotate được khoá mã hoá PII.**~~ **KHÔNG CÒN ÁP DỤNG (2026-09-06).** `PII_ENCRYPTION_KEY_V1` và `SUPABASE_SERVICE_ROLE_KEY` đã gỡ khỏi `env.schema.ts` — API không còn giữ credential đặc quyền nào, chỉ verify JWT qua JWKS công khai. Không có dữ liệu mã hoá nào để mất.
 
 3. **Cột enum Postgres sort theo thứ tự KHAI BÁO, không phải bảng chữ cái.** Đã cắn 2 lần. Sau khi mở rộng 22 quận, `HOC_MON` ở vị trí 17 chứ không phải 0. Mọi assertion về thứ tự phải kiểm lại.
 
@@ -63,7 +63,7 @@ Mỗi mảng do một agent độc lập soi, có tấn công/đo đạc thật 
 ## 4. Việc còn lại, theo thứ tự khuyến nghị
 
 ### Bảo mật / vận hành
-- **Rotate `SUPABASE_SERVICE_ROLE_KEY` và mật khẩu database** định kỳ trong Supabase Dashboard, cập nhật lại biến môi trường trên Render. Đây là **repo công khai** — không bao giờ ghi giá trị bí mật thật vào bất kỳ file nào trong repo.
+- **Rotate `SUPABASE_SERVICE_ROLE_KEY` và mật khẩu database** trong Supabase Dashboard. Khoá service_role vẫn cấp quyền toàn bộ database dù API không còn dùng — rotate xong thì **xoá luôn `SUPABASE_SERVICE_ROLE_KEY` và `PII_ENCRYPTION_KEY_V1` khỏi biến môi trường Render**, không còn gì đọc chúng. Đây là **repo công khai** — không bao giờ ghi giá trị bí mật thật vào bất kỳ file nào trong repo.
 - Thêm security header cho web (`next.config.ts` chưa có `headers()`): thiếu `X-Frame-Options`/CSP `frame-ancestors`, `nosniff`, `Referrer-Policy`. Trang đã đăng nhập có thể bị nhúng iframe → clickjacking vào nút đăng xuất và đổi vai trò.
 - `/v1/health` trả `{status:'ok'}` cứng, không chạm DB → database chết vẫn báo khoẻ. Nên thêm `/v1/ready` có `SELECT 1`.
 

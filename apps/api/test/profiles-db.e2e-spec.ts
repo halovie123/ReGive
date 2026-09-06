@@ -67,8 +67,6 @@ describeDatabase('Profile mutation concurrency with PostgreSQL (e2e)', () => {
               SUPABASE_JWKS_URL:
                 'https://unused.supabase.co/auth/v1/.well-known/jwks.json',
               SUPABASE_ANON_KEY: 'test-anon-key',
-              SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
-              PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 13).toString('base64'),
             }),
           ],
         }),

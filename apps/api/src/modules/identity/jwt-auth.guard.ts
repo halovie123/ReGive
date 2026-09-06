@@ -65,7 +65,6 @@ export class JwtAuthGuard implements CanActivate {
     request.currentUser = {
       id: user.id,
       providerSubject: user.providerSubject,
-      phoneVerified: user.phoneVerifiedAt !== null,
     };
 
     return true;

@@ -3,8 +3,6 @@ import { isOnboardingComplete, nextOnboardingStep } from '@/lib/onboarding-step'
 
 const baseMe: MeResponse = {
   id: 'user-1',
-  phoneVerified: false,
-  phoneLast4: null,
   profile: null,
   roles: [],
   activeRole: null,
@@ -28,13 +26,19 @@ describe('nextOnboardingStep', () => {
     expect(nextOnboardingStep(me)).toBe('/trang-chu');
   });
 
-  it('ignores phoneVerified entirely (phone/OTP sign-in was removed)', () => {
+  /**
+   * Phone sign-in is gone, so MeResponse no longer carries any phone field.
+   * Routing must depend on the profile alone; a reader looking for the old
+   * phone gate should find this instead of re-adding one.
+   */
+  it('gates on the profile alone, with no phone field in the contract', () => {
     const withProfile: MeResponse = {
       ...baseMe,
-      phoneVerified: false,
       profile: { displayName: 'Lan', bio: '', avatarKey: null },
     };
     expect(nextOnboardingStep(withProfile)).toBe('/trang-chu');
+    expect(withProfile).not.toHaveProperty('phoneVerified');
+    expect(withProfile).not.toHaveProperty('phoneLast4');
   });
 });
 

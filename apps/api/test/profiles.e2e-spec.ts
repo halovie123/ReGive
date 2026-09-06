@@ -16,7 +16,6 @@ class MemoryOnboardingDatabase {
     {
       id: string;
       providerSubject: string;
-      phoneVerifiedAt: Date | null;
       status: UserStatus;
     }
   >();
@@ -32,7 +31,6 @@ class MemoryOnboardingDatabase {
       const created = {
         id: `user-${this.users.size + 1}`,
         providerSubject,
-        phoneVerifiedAt: null,
         status: 'ACTIVE' as const,
       };
       this.users.set(providerSubject, created);
@@ -46,8 +44,6 @@ class MemoryOnboardingDatabase {
         return Promise.reject(new Error('Test user was not provisioned'));
       return Promise.resolve({
         id: user.id,
-        phoneLast4: null,
-        phoneVerifiedAt: user.phoneVerifiedAt,
         activeRole: null,
         profile: null,
         roleAssignments: [],
@@ -73,8 +69,6 @@ describe('Profile onboarding API (e2e)', () => {
               SUPABASE_URL: 'https://unused.supabase.co',
               SUPABASE_JWKS_URL:
                 'https://unused.supabase.co/auth/v1/.well-known/jwks.json',
-              SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
-              PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 3).toString('base64'),
             }),
           ],
         }),
@@ -123,8 +117,6 @@ describe('Profile onboarding API (e2e)', () => {
       .expect(200);
 
     expect(incomplete.body).toMatchObject({
-      phoneVerified: false,
-      phoneLast4: null,
       profile: null,
       roles: [],
       areas: [],

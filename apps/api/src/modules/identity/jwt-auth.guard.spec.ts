@@ -7,7 +7,6 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 type StoredUser = {
   id: string;
   providerSubject: string;
-  phoneVerifiedAt: Date | null;
   status: UserStatus;
 };
 
@@ -37,7 +36,6 @@ class MemoryPrisma {
       const created = {
         id: `user-${this.users.size + 1}`,
         providerSubject: where.providerSubject,
-        phoneVerifiedAt: null,
         status: this.provisionedStatus,
       };
       this.users.set(where.providerSubject, created);
@@ -57,10 +55,7 @@ const requestContext = (authorization?: string | string[]) => {
 describe('JwtAuthGuard', () => {
   it('provisions exactly one local user for repeated verified subjects', async () => {
     const prisma = new MemoryPrisma();
-    const guard = new JwtAuthGuard(
-      new FixedIdentityVerifier(),
-      prisma as never,
-    );
+    const guard = new JwtAuthGuard(new FixedIdentityVerifier(), prisma);
 
     await guard.canActivate(requestContext('Bearer valid-token').context);
     await guard.canActivate(requestContext('Bearer valid-token').context);
@@ -69,7 +64,6 @@ describe('JwtAuthGuard', () => {
       {
         id: 'user-1',
         providerSubject: 'subject-1',
-        phoneVerifiedAt: null,
         status: 'ACTIVE',
       },
     ]);
@@ -85,7 +79,7 @@ describe('JwtAuthGuard', () => {
     async (authorization) => {
       const guard = new JwtAuthGuard(
         new FixedIdentityVerifier(),
-        new MemoryPrisma() as never,
+        new MemoryPrisma(),
       );
 
       await expect(
@@ -100,7 +94,7 @@ describe('JwtAuthGuard', () => {
   it('maps verifier failures to a safe AUTH_REQUIRED response', async () => {
     const guard = new JwtAuthGuard(
       new FixedIdentityVerifier(),
-      new MemoryPrisma() as never,
+      new MemoryPrisma(),
     );
 
     await expect(
@@ -111,26 +105,31 @@ describe('JwtAuthGuard', () => {
     });
   });
 
-  it('derives phone verification only from the local user record', async () => {
+  /**
+   * currentUser is built from the local user row, never from the token. A
+   * claim the provider happens to include must not become an authorization
+   * input, so this asserts the exact shape with toEqual rather than
+   * toMatchObject — an extra smuggled field turns it red.
+   */
+  it('copies nothing from the JWT claims into currentUser', async () => {
     const verifier: IdentityVerifier = {
       verify: () =>
         Promise.resolve({
           subject: 'subject-1',
           sessionId: 'session-1',
           phone_verified: true,
+          role: 'service_role',
         } as IdentityClaims),
     };
     const { context, request } = requestContext('Bearer valid-token');
-    const guard = new JwtAuthGuard(verifier, new MemoryPrisma() as never);
+    const guard = new JwtAuthGuard(verifier, new MemoryPrisma());
 
     await guard.canActivate(context);
 
-    expect(request).toMatchObject({
-      currentUser: {
-        id: 'user-1',
-        providerSubject: 'subject-1',
-        phoneVerified: false,
-      },
+    const { currentUser } = request as unknown as { currentUser: unknown };
+    expect(currentUser).toEqual({
+      id: 'user-1',
+      providerSubject: 'subject-1',
     });
   });
 
@@ -138,7 +137,7 @@ describe('JwtAuthGuard', () => {
     const { context, request } = requestContext('Bearer valid-token');
     const guard = new JwtAuthGuard(
       new FixedIdentityVerifier(),
-      new MemoryPrisma('ACTIVE') as never,
+      new MemoryPrisma('ACTIVE'),
     );
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
@@ -151,7 +150,7 @@ describe('JwtAuthGuard', () => {
       const { context, request } = requestContext('Bearer valid-token');
       const guard = new JwtAuthGuard(
         new FixedIdentityVerifier(),
-        new MemoryPrisma(status) as never,
+        new MemoryPrisma(status),
       );
 
       await expect(guard.canActivate(context)).rejects.toMatchObject({

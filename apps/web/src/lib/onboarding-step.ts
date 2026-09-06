@@ -10,11 +10,10 @@ export type OnboardingDestination = '/onboarding/profile' | '/trang-chu';
  * previously let the rules drift out of sync between call sites (see
  * task-5-report.md, Fix round 1, finding 7).
  *
- * Phone/OTP verification was dropped from onboarding entirely (no paid
- * SMS gateway) — sign-in is Google/Facebook OAuth only now. The backend
- * still tracks phoneVerified/phoneLast4 and VerifiedPhoneGuard remains in
- * place, unused by any endpoint today, in case phone verification is
- * reintroduced later.
+ * Phone/OTP verification was dropped entirely (no paid SMS gateway) —
+ * sign-in is Google/Facebook OAuth only. The backend no longer tracks any
+ * phone state and VerifiedPhoneGuard has been deleted, so profile
+ * completeness is the only gate left here.
  */
 export function nextOnboardingStep(me: MeResponse): OnboardingDestination {
   if (!me.profile) return '/onboarding/profile';

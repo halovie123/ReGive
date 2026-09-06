@@ -7,14 +7,6 @@ const nonBlankString = z
   .refine((value) => value.trim().length > 0, {
     message: 'Value must not be blank',
   });
-const encryptionKey = nonBlankString.refine(
-  (value) => {
-    const decoded = Buffer.from(value, 'base64');
-    return decoded.length === 32 && decoded.toString('base64') === value;
-  },
-  { message: 'PII_ENCRYPTION_KEY_V1 must be base64 for exactly 32 bytes' },
-);
-
 const urlWithProtocol = (...protocols: string[]) =>
   nonEmptyUrl.refine(
     (value) =>
@@ -37,8 +29,11 @@ const baseEnvSchema = z.object({
   SUPABASE_URL: urlWithProtocol('http:', 'https:'),
   SUPABASE_JWKS_URL: urlWithProtocol('http:', 'https:'),
   SUPABASE_ANON_KEY: nonBlankString,
-  SUPABASE_SERVICE_ROLE_KEY: nonBlankString,
-  PII_ENCRYPTION_KEY_V1: encryptionKey,
+  // SUPABASE_SERVICE_ROLE_KEY and PII_ENCRYPTION_KEY_V1 were required until
+  // phone sign-in was removed. The API now verifies JWTs against the public
+  // JWKS and stores no PII needing encryption, so it holds no privileged
+  // Supabase credential at all. Do not reintroduce either without a
+  // consumer — an unused service-role key is pure blast radius.
 });
 
 export const envSchema = baseEnvSchema.superRefine((environment, context) => {

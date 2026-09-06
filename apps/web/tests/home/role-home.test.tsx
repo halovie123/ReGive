@@ -4,8 +4,6 @@ import { RoleHome } from '@/features/home/role-home';
 
 const meWithRole = (activeRole: UserRole): MeResponse => ({
   id: 'user-1',
-  phoneVerified: true,
-  phoneLast4: '5678',
   profile: { displayName: 'Lan', bio: '', avatarKey: null },
   roles: [activeRole],
   activeRole,

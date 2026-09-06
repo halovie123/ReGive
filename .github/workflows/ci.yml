@@ -75,5 +75,3 @@ jobs:
           SUPABASE_URL: https://smoke.example.supabase.co
           SUPABASE_JWKS_URL: https://smoke.example.supabase.co/auth/v1/.well-known/jwks.json
           SUPABASE_ANON_KEY: smoke-anon-key
-          SUPABASE_SERVICE_ROLE_KEY: smoke-service-role-key
-          PII_ENCRYPTION_KEY_V1: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=

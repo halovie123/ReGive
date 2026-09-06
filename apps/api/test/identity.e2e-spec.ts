@@ -9,16 +9,11 @@ import { IdentityModule } from '../src/modules/identity/identity.module';
 import { IdentityVerifier } from '../src/modules/identity/identity-verifier';
 import { IDENTITY_USER_STORE } from '../src/modules/identity/identity-user.store';
 import { JwtAuthGuard } from '../src/modules/identity/jwt-auth.guard';
-import { SupabaseUserAdmin } from '../src/modules/identity/supabase-user-admin';
-import { VerifiedPhoneGuard } from '../src/modules/identity/verified-phone.guard';
 
 type MemoryUser = {
   id: string;
   providerSubject: string;
-  phoneVerifiedAt: Date | null;
   status: UserStatus;
-  encryptedPhone?: string;
-  phoneLast4?: string;
 };
 
 class MemoryIdentityStore {
@@ -30,35 +25,22 @@ class MemoryIdentityStore {
       const created: MemoryUser = {
         id: `user-${this.users.size + 1}`,
         providerSubject: where.providerSubject,
-        phoneVerifiedAt: null,
         status: 'ACTIVE',
       };
       this.users.set(where.providerSubject, created);
       return Promise.resolve(created);
     },
-    update: ({
-      where,
-      data,
-    }: {
-      where: { id: string };
-      data: {
-        encryptedPhone: string;
-        phoneLast4: string;
-        phoneVerifiedAt: Date;
-      };
-    }) => {
-      const user = [...this.users.values()].find(({ id }) => id === where.id);
-      if (!user) throw new Error('Test user was not provisioned');
-      Object.assign(user, data);
-      return Promise.resolve({ id: user.id });
-    },
   };
 }
 
+/**
+ * Stands in for any community route added by a later plan. It is guarded the
+ * way those routes must be guarded: JwtAuthGuard and nothing else.
+ */
 @Controller('community-probe')
 class CommunityProbeController {
   @Get()
-  @UseGuards(JwtAuthGuard, VerifiedPhoneGuard)
+  @UseGuards(JwtAuthGuard)
   probe(): { allowed: true } {
     return { allowed: true };
   }
@@ -81,8 +63,6 @@ describe('Identity flow (e2e)', () => {
               SUPABASE_URL: 'https://unused.supabase.co',
               SUPABASE_JWKS_URL:
                 'https://unused.supabase.co/auth/v1/.well-known/jwks.json',
-              SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
-              PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 3).toString('base64'),
             }),
           ],
         }),
@@ -104,15 +84,6 @@ describe('Identity flow (e2e)', () => {
           });
         },
       })
-      .overrideProvider(SupabaseUserAdmin)
-      .useValue({
-        getUser: (subject: string) =>
-          Promise.resolve({
-            subject,
-            phone: '+84 912-345-678',
-            phoneConfirmedAt: new Date('2026-08-04T10:00:00.000Z'),
-          }),
-      })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -125,36 +96,56 @@ describe('Identity flow (e2e)', () => {
     await app?.close();
   });
 
-  it('uses JWT-only sync to unlock community access without duplicating users', async () => {
+  /**
+   * Phone sign-in was removed (no paid SMS gateway) and VerifiedPhoneGuard
+   * deleted with it. This is the guard against it coming back by accident:
+   * an OAuth user has no phone and never will, so a community route must
+   * admit them on a valid JWT alone. Reintroducing any phone gate turns this
+   * red — where a unit test would not, because unit tests supply their own
+   * `phoneVerified: true` fixtures and never notice that no real account can
+   * satisfy the check.
+   */
+  it('admits a phone-less OAuth user to community routes on a valid JWT alone', async () => {
     const authorization = { Authorization: 'Bearer valid-token' };
 
-    const blocked = await request(app.getHttpServer())
-      .get('/v1/community-probe')
-      .set(authorization)
-      .set('x-correlation-id', 'identity-before-sync')
-      .expect(403);
-    expect(blocked.body).toMatchObject({ code: 'PHONE_NOT_VERIFIED' });
-
-    const synced = await request(app.getHttpServer())
-      .post('/v1/identity/sync-phone')
-      .set(authorization)
-      .expect(201);
-    expect(synced.body).toEqual({
-      phoneVerified: true,
-      phoneLast4: '5678',
-    });
-    expect(JSON.stringify(synced.body)).not.toContain('+84 912-345-678');
-    expect(JSON.stringify(synced.body)).not.toContain('+84912345678');
-
     await request(app.getHttpServer())
       .get('/v1/community-probe')
       .set(authorization)
+      .set('x-correlation-id', 'identity-community-access')
       .expect(200, { allowed: true });
+  });
+
+  it('rejects a request with no bearer token', async () => {
+    const denied = await request(app.getHttpServer())
+      .get('/v1/community-probe')
+      .expect(401);
+    expect(denied.body).toMatchObject({ code: 'AUTH_REQUIRED' });
+  });
+
+  it('provisions one user per subject no matter how often it is presented', async () => {
+    const authorization = { Authorization: 'Bearer valid-token' };
+
     await request(app.getHttpServer())
-      .post('/v1/identity/sync-phone')
+      .get('/v1/community-probe')
       .set(authorization)
-      .expect(201);
+      .expect(200);
+    await request(app.getHttpServer())
+      .get('/v1/community-probe')
+      .set(authorization)
+      .expect(200);
 
     expect([...store.users.keys()]).toEqual(['subject-1']);
+  });
+
+  /**
+   * The removed sync-phone endpoint was the only reason the API held a
+   * Supabase service-role key. Nothing may re-register a route under
+   * /v1/identity without that being a deliberate decision.
+   */
+  it('exposes no identity endpoints at all', async () => {
+    await request(app.getHttpServer())
+      .post('/v1/identity/sync-phone')
+      .set({ Authorization: 'Bearer valid-token' })
+      .expect(404);
   });
 });

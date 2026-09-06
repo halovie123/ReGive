@@ -3,8 +3,6 @@ import { ProfilesService } from './profiles.service';
 
 type StoredUser = {
   id: string;
-  phoneLast4: string | null;
-  phoneVerifiedAt: Date | null;
   activeRole: AppRole | null;
   profile: {
     displayName: string;
@@ -28,8 +26,6 @@ class MemoryProfilesDatabase {
   constructor() {
     this.users.set('user-1', {
       id: 'user-1',
-      phoneLast4: '5678',
-      phoneVerifiedAt: new Date('2026-08-04T10:00:00.000Z'),
       activeRole: 'DONOR',
       profile: null,
       roles: new Set(['DONOR']),
@@ -179,8 +175,6 @@ class MemoryProfilesDatabase {
   private serialize(user: StoredUser) {
     return {
       id: user.id,
-      phoneLast4: user.phoneLast4,
-      phoneVerifiedAt: user.phoneVerifiedAt,
       activeRole: user.activeRole,
       profile: user.profile,
       roleAssignments: [...user.roles].sort().map((role) => ({ role })),
@@ -201,8 +195,6 @@ describe('ProfilesService', () => {
   it('returns a safe incomplete current-user response', async () => {
     await expect(service.getMe('user-1')).resolves.toEqual({
       id: 'user-1',
-      phoneVerified: true,
-      phoneLast4: '5678',
       profile: null,
       roles: ['DONOR'],
       activeRole: 'DONOR',
@@ -219,7 +211,6 @@ describe('ProfilesService', () => {
         bio: 'Chia sẻ',
         avatarKey: null,
       },
-      phoneLast4: '5678',
       roles: ['DONOR'],
       areas: ['HOC_MON'],
     });

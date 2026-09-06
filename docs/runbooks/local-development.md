@@ -69,25 +69,23 @@ cp apps/web/.env.example apps/web/.env.local
 
 - `apps/api/.env` — see the comments in `apps/api/.env.example` for each
   key. The `DATABASE_URL` and `REDIS_URL` defaults already match step 3
-  above. `SUPABASE_URL`, `SUPABASE_JWKS_URL`, `SUPABASE_ANON_KEY`, and
-  `SUPABASE_SERVICE_ROLE_KEY` come from your Supabase project (see
-  `auth-provider-setup.md`). Generate a local `PII_ENCRYPTION_KEY_V1` with:
-  ```bash
-  openssl rand -base64 32
-  ```
+  above. `SUPABASE_URL`, `SUPABASE_JWKS_URL` and `SUPABASE_ANON_KEY` come
+  from your Supabase project (see `auth-provider-setup.md`). No
+  service-role key and no encryption key are required.
 - `apps/web/.env.local` — see `apps/web/.env.example`. Needs
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from the
   same Supabase project, plus `API_BASE_URL` (defaults to
   `http://127.0.0.1:3001/v1`, matching the API's default port below).
 
-Never commit `.env`, `.env.local`, or any file containing a real
-`SUPABASE_SERVICE_ROLE_KEY` — only the checked-in `.env.example` files
-(placeholder values only) belong in git.
+Never commit `.env`, `.env.local`, or any file containing real credentials
+— only the checked-in `.env.example` files (placeholder values only) belong
+in git. This is a public repository.
 
 ## 5. Apply database migrations
 
-There is no separate seed script: the four service areas (`HOC_MON`,
-`BA_DIEM`, `XUAN_THOI_SON`, `DONG_THANH`) are inserted by the migration SQL
+There is no separate seed script: the 22 Ho Chi Minh City districts listed
+in `AREA_CODES` (`packages/contracts/src/enums.ts`) are inserted by the
+migration SQL
 itself (`apps/api/prisma/migrations/20260804000000_identity_foundation/migration.sql:49-57`),
 so applying migrations is sufficient to get a usable dev database.
 
@@ -182,8 +180,5 @@ than once.
   required, `DATABASE_URL`/`REDIS_URL` must use the right protocol, and
   `SUPABASE_URL`/`SUPABASE_JWKS_URL` must be `https://` unless
   `ALLOW_INSECURE_SUPABASE_HTTP=true` and `NODE_ENV` is not `production`.
-- **`PII_ENCRYPTION_KEY_V1 must be base64 for exactly 32 bytes`**:
-  regenerate with `openssl rand -base64 32` — the value must decode to
-  exactly 32 bytes and round-trip back to the same base64 string.
 - **`pnpm: command not found`**: run `corepack enable` once, or prefix
   commands with `corepack pnpm` instead of `pnpm`.

@@ -9,8 +9,6 @@ const validEnvironment = {
   SUPABASE_JWKS_URL:
     'https://project.supabase.co/auth/v1/.well-known/jwks.json',
   SUPABASE_ANON_KEY: 'anon-key-for-tests',
-  SUPABASE_SERVICE_ROLE_KEY: 'service-role-key-for-tests',
-  PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 5).toString('base64'),
 };
 
 describe('envSchema', () => {
@@ -112,18 +110,22 @@ describe('envSchema', () => {
     expect(() =>
       envSchema.parse({
         ...validEnvironment,
-        SUPABASE_SERVICE_ROLE_KEY: '   ',
+        SUPABASE_ANON_KEY: '   ',
       }),
-    ).toThrow('SUPABASE_SERVICE_ROLE_KEY');
+    ).toThrow('SUPABASE_ANON_KEY');
   });
 
-  it('names an encryption key that does not decode to 32 bytes', () => {
-    expect(() =>
-      envSchema.parse({
-        ...validEnvironment,
-        PII_ENCRYPTION_KEY_V1: Buffer.alloc(31, 5).toString('base64'),
-      }),
-    ).toThrow('PII_ENCRYPTION_KEY_V1');
+  /**
+   * The API verifies JWTs against the public JWKS and stores no encrypted
+   * PII, so it needs no privileged credential. Requiring one again would
+   * mean the service-role key sits in the environment of a process that has
+   * no use for it.
+   */
+  it('requires no service-role key or PII encryption key', () => {
+    const parsed = envSchema.parse(validEnvironment);
+
+    expect(parsed).not.toHaveProperty('SUPABASE_SERVICE_ROLE_KEY');
+    expect(parsed).not.toHaveProperty('PII_ENCRYPTION_KEY_V1');
   });
 
   it.each([
@@ -132,8 +134,6 @@ describe('envSchema', () => {
     'SUPABASE_URL',
     'SUPABASE_JWKS_URL',
     'SUPABASE_ANON_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'PII_ENCRYPTION_KEY_V1',
   ] as const)('rejects an empty %s value', (key) => {
     expect(() => envSchema.parse({ ...validEnvironment, [key]: '' })).toThrow(
       key,
