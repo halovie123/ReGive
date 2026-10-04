@@ -82,6 +82,11 @@ while (Date.now() < deadline) {
       if (parsed.status !== 'ok') {
         fail(`GET ${url} returned ${body} (expected {"status":"ok"})`);
       }
+      // Set in main.ts, which no e2e suite boots -- so only this can see it.
+      const poweredBy = response.headers.get('x-powered-by');
+      if (poweredBy) {
+        fail(`GET ${url} advertises X-Powered-By: ${poweredBy}`);
+      }
       console.log(`smoke: GET ${url} -> ${response.status} ${body}`);
       console.log('smoke: OK');
       child.kill();

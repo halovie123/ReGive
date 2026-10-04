@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { resolveApiPort } from './api-port';
 import { envSchema } from './common/config/env.schema';
@@ -22,7 +23,9 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
 class BootstrapModule {}
 
 async function bootstrap() {
-  const app = await NestFactory.create(BootstrapModule);
+  const app = await NestFactory.create<NestExpressApplication>(BootstrapModule);
+  // Advertising the framework only helps someone matching known CVEs.
+  app.disable('x-powered-by');
   app.setGlobalPrefix('v1');
   app.useGlobalFilters(new ApiExceptionFilter());
   await app.listen(resolveApiPort(process.env.PORT));
