@@ -82,6 +82,10 @@ class MemoryDatabase {
       this.listings.set(row.id, row);
       return Promise.resolve({ ...row });
     },
+    findMany: ({ where: { ownerId } }: { where: { ownerId: string } }) =>
+      Promise.resolve(
+        [...this.listings.values()].filter((row) => row.ownerId === ownerId),
+      ),
     findUnique: ({ where: { id } }: { where: { id: string } }) =>
       Promise.resolve(
         this.listings.has(id) ? { ...this.listings.get(id)! } : null,
@@ -308,5 +312,22 @@ describe('Listings API (e2e)', () => {
       .set(owner)
       .expect(expectedStatus)
       .expect(({ body }) => expect(body).toMatchObject(expectedBody));
+  });
+
+  it('serves the owner’s own list at /mine rather than treating it as an id', async () => {
+    await request(app.getHttpServer())
+      .post('/v1/listings')
+      .set(stranger)
+      .send(listing)
+      .expect(201);
+
+    const mine = await request(app.getHttpServer())
+      .get('/v1/listings/mine')
+      .set(stranger)
+      .expect(200);
+
+    const body = mine.body as { isOwner: boolean }[];
+    expect(body.length).toBeGreaterThan(0);
+    expect(body.every((item) => item.isOwner)).toBe(true);
   });
 });

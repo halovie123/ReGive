@@ -79,6 +79,21 @@ class MemoryListingsDatabase {
       this.listings.set(stored.id, stored);
       return Promise.resolve({ ...stored });
     },
+    findMany: ({
+      where: { ownerId },
+      take,
+    }: {
+      where: { ownerId: string };
+      orderBy: { updatedAt: 'desc' };
+      take: number;
+    }) =>
+      Promise.resolve(
+        [...this.listings.values()]
+          .filter((stored) => stored.ownerId === ownerId)
+          .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+          .slice(0, take)
+          .map((stored) => ({ ...stored })),
+      ),
     findUnique: ({ where: { id } }: { where: { id: string } }) => {
       const stored = this.listings.get(id);
       return Promise.resolve(stored ? { ...stored } : null);
@@ -443,6 +458,40 @@ describe('ListingsService', () => {
       await expect(service.withdraw(DONOR, draft.id)).resolves.toMatchObject({
         status: 'WITHDRAWN',
       });
+    });
+  });
+
+  /**
+   * The owner's own list is the only place a draft, a held listing or a
+   * hidden one is visible to them; discovery shows public listings only.
+   */
+  describe('mine', () => {
+    it('lists the owner’s listings in every status, most recently changed first', async () => {
+      const draft = database.seed({
+        updatedAt: new Date('2026-10-01T00:00:00.000Z'),
+      });
+      const hidden = database.seed({
+        status: 'MODERATION_HIDDEN',
+        updatedAt: new Date('2026-10-03T00:00:00.000Z'),
+      });
+      database.seed({ ownerId: OTHER });
+
+      const mine = await service.mine(DONOR);
+
+      expect(mine.map((listing) => listing.id)).toEqual([hidden.id, draft.id]);
+      expect(mine.every((listing) => listing.isOwner)).toBe(true);
+    });
+
+    it('reports an expired listing as EXPIRED in the list too', async () => {
+      database.seed({
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-08-01T00:00:00.000Z'),
+        expiresAt: new Date('2026-08-31T00:00:00.000Z'),
+      });
+
+      const [listing] = await service.mine(DONOR);
+
+      expect(listing.status).toBe('EXPIRED');
     });
   });
 

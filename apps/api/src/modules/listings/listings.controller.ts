@@ -53,6 +53,14 @@ export class ListingsController {
     );
   }
 
+  // Declared before ':id', which would otherwise capture "mine".
+  @Get('mine')
+  mine(
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<ListingResponse[]> {
+    return this.listings.mine(currentUser.id);
+  }
+
   @Get(':id')
   get(
     @CurrentUser() currentUser: AuthenticatedUser,

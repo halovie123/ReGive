@@ -21,6 +21,8 @@ type DatabaseClient = PrismaService | Prisma.TransactionClient;
 /** How long a listing stays public after it is first published. */
 const LISTING_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 
+const MINE_LIMIT = 100;
+
 const notFound = () =>
   new PublicApiException(
     HttpStatus.NOT_FOUND,
@@ -64,6 +66,21 @@ export class ListingsService {
       throw notFound();
     }
     return toResponse(listing, userId, now);
+  }
+
+  /**
+   * The owner's listings in every status -- the only place a draft, a held
+   * or a hidden listing is visible to them. Capped; the MVP has no paging
+   * here because a donor with more than 100 listings is not expected.
+   */
+  async mine(userId: string): Promise<ListingResponse[]> {
+    const listings = await this.prisma.listing.findMany({
+      where: { ownerId: userId },
+      orderBy: { updatedAt: 'desc' },
+      take: MINE_LIMIT,
+    });
+    const now = new Date();
+    return listings.map((listing) => toResponse(listing, userId, now));
   }
 
   async update(
