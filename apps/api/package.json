@@ -32,7 +32,7 @@
     "pretest:e2e": "node ../../scripts/ensure-contracts-built.mjs",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
     "pretest:e2e:db": "node ../../scripts/ensure-contracts-built.mjs",
-    "test:e2e:db": "jest --config ./test/jest-e2e.json --runInBand test/identity-db.e2e-spec.ts test/profiles-db.e2e-spec.ts test/listings-db.e2e-spec.ts test/discovery-db.e2e-spec.ts",
+    "test:e2e:db": "jest --config ./test/jest-e2e.json --runInBand test/identity-db.e2e-spec.ts test/profiles-db.e2e-spec.ts test/listings-db.e2e-spec.ts test/discovery-db.e2e-spec.ts test/listings-gate.e2e-spec.ts",
     "pretest:e2e:profiles-db": "node ../../scripts/ensure-contracts-built.mjs",
     "test:e2e:profiles-db": "jest --config ./test/jest-e2e.json --runInBand test/profiles-db.e2e-spec.ts",
     "presmoke": "node ../../scripts/ensure-contracts-built.mjs",

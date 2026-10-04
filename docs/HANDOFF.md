@@ -17,7 +17,9 @@ Cập nhật: 2026-09-05. Ghi cho người/agent tiếp theo.
 
 **Đã xây (nền móng):** đăng nhập OAuth, hồ sơ, 3 vai trò, 22 quận/huyện TP.HCM, 6 trang chính sách công khai, app shell.
 
-**Chưa xây:** đăng món đồ, khám phá/tìm kiếm, gửi yêu cầu nhận, chat. Nút "Đăng món đồ mới" cố tình vô hiệu hoá với chữ "Sắp ra mắt" — **không phải bug**. Kế hoạch có sẵn ở `docs/superpowers/plans/2026-08-04-listings-discovery.md` và `gifting-chat.md` (đưa vào repo 2026-10-04; trước đó chỉ nằm ngoài repo, trên máy của chủ sản phẩm).
+**Plan 2 (đăng đồ + khám phá) — nhánh `feat/listings-discovery`, chưa merge (2026-10-04):** đăng/sửa/rút bài, sàng lọc rủi ro tự động, khám phá có lọc + tìm không dấu, trang "Bài đăng của tôi". **Còn thiếu:** ảnh (Task 2 — cần bucket Supabase Storage + khoá S3 chỉ có quyền Storage), bản đồ khu vực (hoãn). Chưa có giao diện admin: bài bị giữ/ẩn xử lý bằng SQL theo `docs/runbooks/listing-moderation.md`.
+
+**Chưa xây:** gửi yêu cầu nhận, chat (Plan 3), tình nguyện viên (Plan 4), admin (Plan 5). Kế hoạch ở `docs/superpowers/plans/`.
 
 ---
 

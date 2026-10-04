@@ -359,6 +359,14 @@ git commit -m "feat: add listing creation and area discovery ui"
 
 ### Task 6: Listings release gate
 
+> **Done (2026-10-04) for everything except images.** `listings-gate.e2e-spec.ts`
+> runs over HTTP against real Postgres (the only suite that does both) and is
+> part of `test:e2e:db`, which CI already runs; CI step names updated.
+> `docs/runbooks/listing-moderation.md` documents reason codes and, since
+> there is no admin UI until Plan 5, operator SQL for the queue, approve,
+> reject and suspend — each statement verified against Postgres 17.
+> Re-run this gate after Task 2 adds the image rules.
+
 **Files:**
 - Create: `apps/api/test/listings-gate.e2e-spec.ts`
 - Create: `docs/runbooks/listing-moderation.md`
@@ -368,27 +376,27 @@ git commit -m "feat: add listing creation and area discovery ui"
 - Consumes: Tasks 1–5.
 - Produces: Plan 2 release gate.
 
-- [ ] **Step 1: Add gate test**
+- [x] **Step 1: Add gate test**
 
 Exercise safe publish, medium pending review, high hidden, owner-only mutation, expiry, cursor pagination and sanitized public response.
 
-- [ ] **Step 2: Run gate and fix only uncovered defects**
+- [x] **Step 2: Run gate and fix only uncovered defects**
 
 Run: `pnpm --filter api test:e2e -- listings-gate`
 
 Expected: PASS after all required behavior exists.
 
-- [ ] **Step 3: Document moderation reason codes and operator actions**
+- [x] **Step 3: Document moderation reason codes and operator actions**
 
 List each reason code, user-facing copy and whether an operator may publish, reject or request edits.
 
-- [ ] **Step 4: Run repository verification**
+- [x] **Step 4: Run repository verification**
 
 Run: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
 
 Expected: all pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/test/listings-gate.e2e-spec.ts docs/runbooks/listing-moderation.md .github/workflows/ci.yml
