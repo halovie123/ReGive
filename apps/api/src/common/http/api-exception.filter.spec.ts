@@ -61,12 +61,12 @@ class FailureController {
     throw new Error('database password=must-not-leak');
   }
 
-  @Get('public-phone-verification')
-  publicPhoneVerificationFailure(): never {
+  @Get('public-account-suspended')
+  publicAccountSuspendedFailure(): never {
     throw new PublicApiException(
       403,
-      'PHONE_NOT_VERIFIED',
-      'Bạn cần xác thực số điện thoại để tiếp tục.',
+      'ACCOUNT_SUSPENDED',
+      'Tài khoản của bạn đang bị tạm khoá.',
     );
   }
 }
@@ -174,14 +174,14 @@ describe('ApiExceptionFilter', () => {
 
   it('preserves only an explicitly allowlisted public problem code', async () => {
     const response = await request(app.getHttpServer())
-      .get('/failures/public-phone-verification')
-      .set('x-correlation-id', 'request-phone')
+      .get('/failures/public-account-suspended')
+      .set('x-correlation-id', 'request-suspended')
       .expect(403);
 
     expect(response.body).toEqual({
-      code: 'PHONE_NOT_VERIFIED',
-      message: 'Bạn cần xác thực số điện thoại để tiếp tục.',
-      correlationId: 'request-phone',
+      code: 'ACCOUNT_SUSPENDED',
+      message: 'Tài khoản của bạn đang bị tạm khoá.',
+      correlationId: 'request-suspended',
     });
   });
 });
