@@ -1,3 +1,4 @@
+import { Component, type ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AREA_CODES } from '@buy-nothing/contracts';
@@ -91,4 +92,55 @@ describe('OnboardingForm', () => {
     expect(await screen.findByText('Dữ liệu không hợp lệ.')).toBeVisible();
     expect(screen.getByLabelText('Tên hiển thị')).toHaveValue('Nguyễn Thị Lan');
   });
+
+  /**
+   * On success the action calls redirect(), and Next rejects the client-side
+   * action promise with a NEXT_REDIRECT error meant for its RedirectBoundary.
+   * Called from react-hook-form's submit handler, that rejection escaped as
+   * an unhandled promise rejection on every successful sign-up — a false
+   * error in the logs on exactly the happy path. It must reach React's error
+   * boundary instead, which in the real app is Next's RedirectBoundary.
+   */
+  it('hands the success redirect to React rather than leaking it as an unhandled rejection', async () => {
+    const redirectError = Object.assign(new Error('NEXT_REDIRECT'), {
+      digest: 'NEXT_REDIRECT;replace;/trang-chu;307;',
+    });
+    submitOnboardingProfileMock.mockRejectedValueOnce(redirectError);
+    const caught: unknown[] = [];
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const user = userEvent.setup();
+    render(
+      <CatchBoundary onCatch={(error) => caught.push(error)}>
+        <OnboardingForm />
+      </CatchBoundary>,
+    );
+
+    await user.type(screen.getByLabelText('Tên hiển thị'), 'Nguyễn Thị Lan');
+    await user.click(screen.getByRole('checkbox', { name: /Người tặng/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'Hóc Môn' }));
+    await user.click(screen.getByRole('button', { name: 'Hoàn tất đăng ký' }));
+
+    expect(await screen.findByText('boundary caught')).toBeInTheDocument();
+    expect(caught).toEqual([redirectError]);
+  });
 });
+
+/** Stands in for Next's RedirectBoundary, which the real app wraps pages in. */
+class CatchBoundary extends Component<
+  { children: ReactNode; onCatch: (error: unknown) => void },
+  { caught: boolean }
+> {
+  state = { caught: false };
+
+  static getDerivedStateFromError() {
+    return { caught: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    this.props.onCatch(error);
+  }
+
+  render() {
+    return this.state.caught ? <p>boundary caught</p> : this.props.children;
+  }
+}
