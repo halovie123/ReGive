@@ -18,8 +18,32 @@ export function isApiProblemError(error: unknown): error is ApiProblemError {
   return error instanceof ApiProblemError;
 }
 
+/**
+ * A deploy-time mistake, not a runtime condition: deliberately not an
+ * ApiProblemError, so safeGetMe() rethrows it instead of reporting the
+ * user as signed out.
+ */
+export class ApiConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ApiConfigurationError';
+  }
+}
+
 function apiBaseUrl(): string {
-  return (process.env.API_BASE_URL ?? 'http://127.0.0.1:3001/v1').replace(/\/$/, '');
+  const configured = process.env.API_BASE_URL;
+  if (!configured) {
+    // The localhost default is a dev convenience only. In production it
+    // points at the serverless sandbox itself, which would make a missing
+    // variable indistinguishable from a sleeping API.
+    if (process.env.NODE_ENV === 'production') {
+      throw new ApiConfigurationError(
+        'Missing required environment variable: API_BASE_URL',
+      );
+    }
+    return 'http://127.0.0.1:3001/v1';
+  }
+  return configured.replace(/\/$/, '');
 }
 
 async function getAccessToken(): Promise<string | null> {
@@ -63,9 +87,13 @@ export async function apiFetch<T = unknown>(
     throw new ApiProblemError(NO_SESSION_PROBLEM);
   }
 
+  // Outside the try below: a configuration error must not be reported as
+  // API_UNREACHABLE.
+  const url = `${apiBaseUrl()}${path}`;
+
   let response: Response;
   try {
-    response = await fetch(`${apiBaseUrl()}${path}`, {
+    response = await fetch(url, {
       ...init,
       cache: 'no-store',
       // The API runs on Render's free tier, which sleeps after ~15 minutes
@@ -122,11 +150,17 @@ export const getMe = cache(async (): Promise<MeResponse> => {
  * checks so that redirect() (which itself throws) is never called from
  * inside a try/catch that would swallow it — fetch with safeGetMe first,
  * then branch and redirect() outside of any try block.
+ *
+ * A missing API_BASE_URL is the one failure it does not swallow: that is a
+ * broken deploy, and hiding it would make every user look signed out.
  */
 export async function safeGetMe(): Promise<MeResponse | null> {
   try {
     return await getMe();
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiConfigurationError) {
+      throw error;
+    }
     return null;
   }
 }

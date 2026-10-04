@@ -107,6 +107,64 @@ describe('apiFetch', () => {
   });
 });
 
+/**
+ * A missing API_BASE_URL used to fall back to http://127.0.0.1:3001/v1 in
+ * every environment. On Vercel that address is the function's own sandbox,
+ * so every call failed as API_UNREACHABLE, safeGetMe turned that into null,
+ * and a misconfigured deploy looked exactly like a sleeping API — forever.
+ */
+describe('API base URL', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    createClientMock.mockReset();
+    mockSession('token-abc');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('refuses to guess a URL in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('API_BASE_URL', undefined);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    await expect(apiFetch('/me')).rejects.toThrow('API_BASE_URL');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not let safeGetMe hide the misconfiguration as a signed-out user', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('API_BASE_URL', undefined);
+
+    await expect(safeGetMe()).rejects.toThrow('API_BASE_URL');
+  });
+
+  it('keeps the local default outside production', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('API_BASE_URL', undefined);
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify(VALID_ME), { status: 200 }));
+
+    await apiFetch('/me');
+
+    expect(String(fetchSpy.mock.calls[0][0])).toBe('http://127.0.0.1:3001/v1/me');
+  });
+
+  it('uses the configured URL and tolerates a trailing slash', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('API_BASE_URL', 'https://api.example.test/v1/');
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify(VALID_ME), { status: 200 }));
+
+    await apiFetch('/me');
+
+    expect(String(fetchSpy.mock.calls[0][0])).toBe('https://api.example.test/v1/me');
+  });
+});
+
 describe('safeGetMe', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
