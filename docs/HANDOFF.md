@@ -17,7 +17,7 @@ Cập nhật: 2026-09-05. Ghi cho người/agent tiếp theo.
 
 **Đã xây (nền móng):** đăng nhập OAuth, hồ sơ, 3 vai trò, 22 quận/huyện TP.HCM, 6 trang chính sách công khai, app shell.
 
-**Chưa xây:** đăng món đồ, khám phá/tìm kiếm, gửi yêu cầu nhận, chat. Nút "Đăng món đồ mới" cố tình vô hiệu hoá với chữ "Sắp ra mắt" — **không phải bug**. Kế hoạch có sẵn ở `docs/superpowers/plans/2026-08-04-listings-discovery.md` và `gifting-chat.md`.
+**Chưa xây:** đăng món đồ, khám phá/tìm kiếm, gửi yêu cầu nhận, chat. Nút "Đăng món đồ mới" cố tình vô hiệu hoá với chữ "Sắp ra mắt" — **không phải bug**. Kế hoạch có sẵn ở `docs/superpowers/plans/2026-08-04-listings-discovery.md` và `gifting-chat.md` (đưa vào repo 2026-10-04; trước đó chỉ nằm ngoài repo, trên máy của chủ sản phẩm).
 
 ---
 
