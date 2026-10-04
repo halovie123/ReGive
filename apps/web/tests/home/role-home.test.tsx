@@ -10,29 +10,26 @@ const meWithRole = (activeRole: UserRole): MeResponse => ({
   areas: ['HOC_MON'],
 });
 
-const ROLE_CTAS: [UserRole, string][] = [
-  ['DONOR', 'Đăng món đồ mới'],
-  ['RECIPIENT', 'Tìm món đồ'],
-  ['VOLUNTEER', 'Xem đơn cần vận chuyển'],
-];
-
 describe('RoleHome', () => {
-  it.each(ROLE_CTAS)(
-    'announces the %s call-to-action as not yet available instead of linking to a missing route',
-    (role, cta) => {
-      render(<RoleHome me={meWithRole(role)} />);
+  it.each<[UserRole, string, string]>([
+    ['DONOR', 'Đăng món đồ mới', '/dang-tang'],
+    ['RECIPIENT', 'Tìm món đồ', '/kham-pha'],
+  ])('sends a %s straight to their main task', (role, cta, href) => {
+    render(<RoleHome me={meWithRole(role)} />);
 
-      const button = screen.getByRole('button', { name: cta });
-      expect(button).toBeDisabled();
-      expect(screen.getByText('Sắp ra mắt')).toBeInTheDocument();
-    },
-  );
+    expect(screen.getByRole('link', { name: cta })).toHaveAttribute('href', href);
+    expect(screen.queryByText('Sắp ra mắt')).not.toBeInTheDocument();
+  });
 
-  it.each(ROLE_CTAS)('renders no link at all for %s', (role) => {
-    const { container } = render(<RoleHome me={meWithRole(role)} />);
+  /**
+   * Volunteer delivery is Plan 4 and has no route yet. Rather than link to
+   * a guaranteed 404, the button says it is not available yet.
+   */
+  it('announces the volunteer action as not yet available', () => {
+    const { container } = render(<RoleHome me={meWithRole('VOLUNTEER')} />);
 
-    // /kham-pha (and any create-listing route) do not exist yet, so the
-    // home screen must not offer a link that would 404.
+    expect(screen.getByRole('button', { name: 'Xem đơn cần vận chuyển' })).toBeDisabled();
+    expect(screen.getByText('Sắp ra mắt')).toBeInTheDocument();
     expect(container.querySelectorAll('a')).toHaveLength(0);
   });
 });

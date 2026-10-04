@@ -46,15 +46,20 @@ test.describe('public routing', () => {
     await expect(page.getByRole('button', { name: 'Tiếp tục với Facebook' })).toBeVisible();
   });
 
-  test('an unauthenticated visitor is redirected to /login from a protected route', async ({
-    page,
-  }) => {
-    // /kham-pha doesn't exist yet (a later task), but proxy.ts protects
-    // every route by default unless it's explicitly public, so this
-    // redirect fires before Next.js would even 404 the route.
-    await page.goto('/kham-pha');
-    await expect(page).toHaveURL(/\/login$/);
-  });
+  // The spec keeps the marketplace behind sign-in; proxy.ts protects every
+  // route that is not explicitly public.
+  for (const path of [
+    '/kham-pha',
+    '/dang-tang',
+    '/bai-dang-cua-toi',
+    '/vat-pham/00000000-0000-4000-8000-000000000001',
+    '/vat-pham/00000000-0000-4000-8000-000000000001/sua',
+  ]) {
+    test(`an unauthenticated visitor is redirected from ${path} to /login`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/login$/);
+    });
+  }
 
   test('onboarding routes redirect an unauthenticated visitor to /login', async ({ page }) => {
     await page.goto('/onboarding/profile');

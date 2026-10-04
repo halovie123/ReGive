@@ -101,6 +101,9 @@ export default async function AppLayout({
 
           <nav className="app-nav-links" aria-label="Điều hướng chính">
             <Link href="/trang-chu">Trang chủ</Link>
+            <Link href="/kham-pha">Khám phá</Link>
+            <Link href="/dang-tang">Đăng tặng</Link>
+            <Link href="/bai-dang-cua-toi">Bài đăng của tôi</Link>
             <Link href="/bao-mat">Bảo mật tài khoản</Link>
           </nav>
 
@@ -138,6 +141,9 @@ export default async function AppLayout({
               <summary aria-label="Mở menu điều hướng">☰</summary>
               <nav className="mobile-nav-panel" aria-label="Điều hướng trên thiết bị di động">
                 <Link href="/trang-chu">Trang chủ</Link>
+                <Link href="/kham-pha">Khám phá</Link>
+                <Link href="/dang-tang">Đăng tặng</Link>
+                <Link href="/bai-dang-cua-toi">Bài đăng của tôi</Link>
                 <Link href="/bao-mat">Bảo mật tài khoản</Link>
               </nav>
             </details>

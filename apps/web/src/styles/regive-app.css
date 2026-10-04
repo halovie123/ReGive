@@ -478,3 +478,85 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* Listings and discovery (Plan 2). Mobile-first: one column, widening to
+   a grid. Status badges keep ink-coloured text on a light tint, so
+   contrast does not depend on the tint. */
+a.ui-button { display: inline-flex; align-items: center; justify-content: center; }
+
+.discovery-filters {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+.discovery-filter-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+
+.listing-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+.listing-card-link {
+  height: 100%;
+  padding: 20px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  border: 1px solid var(--regive-line);
+  border-radius: 22px;
+  background: white;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.listing-card-link:hover,
+.listing-card-link:focus-visible { border-color: var(--regive-green); box-shadow: var(--regive-shadow); }
+.listing-card-meta { color: var(--regive-muted); font-size: .82rem; font-weight: 600; }
+.listing-card-title { font-size: 1.05rem; line-height: 1.35; overflow-wrap: anywhere; }
+.listing-card-area { justify-self: start; padding: 4px 10px; border-radius: 999px; background: #eef6ec; font-size: .82rem; font-weight: 600; }
+.listing-card-footer { display: flex; justify-content: space-between; gap: 8px; color: var(--regive-muted); font-size: .8rem; }
+.discovery-more { display: flex; justify-content: center; }
+
+.listing-form-row { display: grid; gap: 14px; grid-template-columns: 1fr; }
+.field-textarea { min-height: 96px; resize: vertical; font: inherit; line-height: 1.5; }
+
+.listing-detail h1 { margin: 0; overflow-wrap: anywhere; }
+.listing-section-title { margin: 0 0 6px; font-size: .95rem; }
+.listing-text { margin: 0; white-space: pre-line; line-height: 1.6; overflow-wrap: anywhere; }
+.listing-owner-panel { display: grid; gap: 10px; padding: 16px; border-radius: 18px; background: #f6faf4; }
+.listing-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.listing-confirm .field-help { flex-basis: 100%; margin: 0; }
+
+.listing-status {
+  justify-self: start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #eef2ee;
+  color: var(--regive-ink);
+  font-size: .82rem;
+  font-weight: 700;
+}
+.listing-status[data-status="PUBLISHED"] { background: #e3f2df; }
+.listing-status[data-status="PENDING_REVIEW"] { background: #fdf1d6; }
+.listing-status[data-status="MODERATION_HIDDEN"] { background: #f9e1e1; }
+
+.listing-page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.listing-page-header h1 { margin: 0; }
+.my-listings { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.my-listing-link {
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--regive-line);
+  border-radius: 16px;
+}
+.my-listing-link:hover,
+.my-listing-link:focus-visible { border-color: var(--regive-green); }
+
+@media (min-width: 720px) {
+  .discovery-filters { grid-template-columns: 2fr 1fr 1fr 1fr; align-items: end; }
+  .discovery-filter-actions { grid-column: 1 / -1; }
+  .listing-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .listing-form-row { grid-template-columns: 1fr 1fr; }
+}

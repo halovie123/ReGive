@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { MeResponse, UserRole } from '@buy-nothing/contracts';
 import { StatusState } from '@/components/ui/status-state';
 
@@ -5,6 +6,8 @@ type RoleContent = {
   eyebrow: string;
   title: string;
   cta: string;
+  /** Absent while the role's main task has no route yet. */
+  href?: string;
 };
 
 const ROLE_CONTENT: Record<UserRole, RoleContent> = {
@@ -12,11 +15,13 @@ const ROLE_CONTENT: Record<UserRole, RoleContent> = {
     eyebrow: 'Người tặng',
     title: 'Sẵn sàng chia sẻ món đồ tiếp theo?',
     cta: 'Đăng món đồ mới',
+    href: '/dang-tang',
   },
   RECIPIENT: {
     eyebrow: 'Người nhận',
     title: 'Tìm món đồ bạn đang cần',
     cta: 'Tìm món đồ',
+    href: '/kham-pha',
   },
   VOLUNTEER: {
     eyebrow: 'Tình nguyện viên',
@@ -45,25 +50,28 @@ export function RoleHome({ me }: RoleHomeProps) {
         <p>
           Xin chào, {name}. Đây là không gian dành riêng cho vai trò hiện tại của bạn.
         </p>
-        {/*
-          The destination for each role's primary action (browsing and
-          creating listings) is a later task and has no route yet. Rather
-          than link to a guaranteed 404, the button announces itself as not
-          yet available — the label still tells the member what this space
-          is for once it lands.
-        */}
         <div className="role-home-actions">
-          <button
-            className="button button-primary"
-            type="button"
-            disabled
-            aria-describedby="role-home-cta-note"
-          >
-            {content.cta}
-          </button>
-          <p id="role-home-cta-note" className="role-home-cta-note">
-            Sắp ra mắt
-          </p>
+          {content.href ? (
+            <Link className="button button-primary" href={content.href}>
+              {content.cta}
+            </Link>
+          ) : (
+            // Volunteer delivery (Plan 4) has no route yet. Rather than link
+            // to a guaranteed 404, the button says it is not available.
+            <>
+              <button
+                className="button button-primary"
+                type="button"
+                disabled
+                aria-describedby="role-home-cta-note"
+              >
+                {content.cta}
+              </button>
+              <p id="role-home-cta-note" className="role-home-cta-note">
+                Sắp ra mắt
+              </p>
+            </>
+          )}
         </div>
       </section>
 

@@ -23,6 +23,29 @@ describe('UI primitives', () => {
     expect(screen.getByLabelText('Khu vực')).toBeVisible();
   });
 
+  /**
+   * The hint used to sit inside the <label>, so a screen reader announced
+   * the whole sentence as the field's name. The name is the label alone;
+   * the hint and any error are the description.
+   */
+  it.each([
+    ['Input', <Input key="i" label="Tên hiển thị" hint="Tối đa 80 ký tự." />],
+    [
+      'Select',
+      <Select key="s" label="Khu vực" hint="Chỉ hiển thị quận/huyện." defaultValue="">
+        <option value="">Chọn khu vực</option>
+      </Select>,
+    ],
+  ])('names a %s by its label and describes it by its hint', (_name, element) => {
+    render(element);
+
+    const control = screen.getByRole(_name === 'Input' ? 'textbox' : 'combobox');
+    expect(control).toHaveAccessibleName(_name === 'Input' ? 'Tên hiển thị' : 'Khu vực');
+    expect(control).toHaveAccessibleDescription(
+      _name === 'Input' ? 'Tối đa 80 ký tự.' : 'Chỉ hiển thị quận/huyện.',
+    );
+  });
+
   it('closes an open dialog with the Escape key', async () => {
     const user = userEvent.setup();
 

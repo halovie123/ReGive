@@ -17,8 +17,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   const descriptionId = error || hint ? `${controlId}-description` : undefined;
 
   return (
-    <label className="field" htmlFor={controlId}>
-      <span className="field-label">{label}</span>
+    // The hint stays outside the <label>: inside it, a screen reader reads
+    // the hint as part of the field's name.
+    <div className="field">
+      <label className="field-label" htmlFor={controlId}>
+        {label}
+      </label>
       <select
         ref={ref}
         id={controlId}
@@ -34,6 +38,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           {error ?? hint}
         </span>
       )}
-    </label>
+    </div>
   );
 });

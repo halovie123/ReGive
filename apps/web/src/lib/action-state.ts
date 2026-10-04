@@ -10,3 +10,8 @@
  */
 
 export type ProfileActionState = { status: 'idle' } | { status: 'error'; message: string };
+
+/** Result of a listing Server Action that did not redirect. */
+export type ListingActionState =
+  | { status: 'idle' }
+  | { status: 'error'; message: string };

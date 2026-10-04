@@ -292,6 +292,22 @@ git commit -m "feat: add listing discovery and area search"
 
 ### Task 5: Web create-listing and discovery vertical slice
 
+> **Partly done (2026-10-04) — no images, no map.** Shipped: `/dang-tang`
+> (create with save-draft or publish), `/kham-pha` (GET-form filters in the
+> URL, "Xem thêm" appends pages), `/vat-pham/[id]` (owner sees status, help
+> text, publish/withdraw with confirmation, edit link), `/vat-pham/[id]/sua`,
+> `/bai-dang-cua-toi` (needs the new `GET /v1/listings/mine`). Home CTAs for
+> donors and recipients now link to real pages; nav updated.
+> Deviations: no TanStack Query (server components + Server Actions, as the
+> rest of the app); a member without the donor role can add it from
+> `/dang-tang` (there was no way to add a role after onboarding).
+> Fixed along the way: `Input`/`Select` put the hint inside `<label>`, so
+> screen readers read it as part of the field name.
+> **Still owed:** `image-uploader.tsx` and the 1–6 image rule (Task 2), and
+> the area map (amendment 4). Not yet seen in a real signed-in browser:
+> covered by component tests, the production build, and Playwright for
+> unauthenticated routing only.
+
 **Files:**
 - Create: `apps/web/src/features/listings/listing-form.tsx`
 - Create: `apps/web/src/features/listings/image-uploader.tsx`

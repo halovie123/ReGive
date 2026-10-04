@@ -17,8 +17,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const descriptionId = error || hint ? `${controlId}-description` : undefined;
 
   return (
-    <label className="field" htmlFor={controlId}>
-      <span className="field-label">{label}</span>
+    // The hint stays outside the <label>: inside it, a screen reader reads
+    // the hint as part of the field's name.
+    <div className="field">
+      <label className="field-label" htmlFor={controlId}>
+        {label}
+      </label>
       <input
         ref={ref}
         id={controlId}
@@ -32,6 +36,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           {error ?? hint}
         </span>
       )}
-    </label>
+    </div>
   );
 });
