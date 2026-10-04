@@ -1,3 +1,5 @@
+import { stripAccents } from '../../common/text/vietnamese';
+
 /**
  * Deterministic first-pass screening of a listing's text. It decides only
  * where a listing lands -- LOW publishes, MEDIUM waits for a moderator, HIGH
@@ -191,10 +193,6 @@ function withoutSafePhrases(text: string): string {
     (current, phrase) => current.split(phrase).join(' '),
     text,
   );
-}
-
-function stripAccents(text: string): string {
-  return text.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/g, 'd');
 }
 
 /**

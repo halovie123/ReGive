@@ -14,6 +14,7 @@ type StoredListing = {
   title: string;
   description: string;
   defects: string;
+  searchText?: string;
   category: ItemCategory;
   condition: ItemCondition;
   areaCode: AreaCode;
@@ -203,6 +204,32 @@ describe('ListingsService', () => {
       await expect(
         service.create(DONOR, { ...newListing, areaCode: 'CAN_GIO' }),
       ).rejects.toMatchObject({ publicProblem: { code: 'AREA_UNAVAILABLE' } });
+    });
+  });
+
+  /**
+   * Discovery searches search_text, so it must follow every change to the
+   * title or description, accent-free so "sach" finds "sách".
+   */
+  describe('search text', () => {
+    it('stores an accent-free copy of the title and description', async () => {
+      const created = await service.create(DONOR, newListing);
+
+      expect(database.listings.get(created.id)?.searchText).toBe(
+        'bo sach giao khoa lop 5 du 10 cuon con sach co boc bia phu hop cho nam hoc moi',
+      );
+    });
+
+    it('recomputes it when the title changes', async () => {
+      const created = await service.create(DONOR, newListing);
+
+      await service.update(DONOR, created.id, {
+        title: 'Truyện tranh Đôrêmon',
+      });
+
+      expect(database.listings.get(created.id)?.searchText).toMatch(
+        /^truyen tranh doremon du 10 cuon/,
+      );
     });
   });
 

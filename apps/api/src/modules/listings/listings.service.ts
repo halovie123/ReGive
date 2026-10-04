@@ -7,6 +7,7 @@ import type {
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { PublicApiException } from '../../common/http/public-api.exception';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { toSearchText } from '../../common/text/vietnamese';
 import { assessListing } from './listing-risk';
 import {
   effectiveStatus,
@@ -36,7 +37,11 @@ export class ListingsService {
       await this.requireDonor(userId, transaction);
       await this.requireActiveArea(input.areaCode, transaction);
       const listing = await transaction.listing.create({
-        data: { ownerId: userId, ...input },
+        data: {
+          ownerId: userId,
+          ...input,
+          searchText: searchTextFor(input),
+        },
       });
       return toResponse(listing, userId, new Date());
     });
@@ -129,9 +134,16 @@ export class ListingsService {
         await this.requireActiveArea(input.areaCode, transaction);
       }
 
-      const dates: { publishedAt?: Date; expiresAt?: Date } = {};
+      const next = { ...listing, ...input };
+      const derived: {
+        publishedAt?: Date;
+        expiresAt?: Date;
+        searchText?: string;
+      } =
+        input.title !== undefined || input.description !== undefined
+          ? { searchText: searchTextFor(next) }
+          : {};
       if (status === 'PENDING_REVIEW') {
-        const next = { ...listing, ...input };
         if (next.defects.trim() === '') {
           throw new PublicApiException(
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -153,15 +165,15 @@ export class ListingsService {
           status = transitionListing(status, 'APPROVE');
           // First publication sets the dates; a later edit keeps them, so
           // editing cannot bump a listing up the feed or extend its life.
-          dates.publishedAt = listing.publishedAt ?? now;
-          dates.expiresAt =
+          derived.publishedAt = listing.publishedAt ?? now;
+          derived.expiresAt =
             listing.expiresAt ?? new Date(now.getTime() + LISTING_LIFETIME_MS);
         }
       }
 
       const updated = await transaction.listing.update({
         where: { id: listingId },
-        data: { ...input, ...dates, status },
+        data: { ...input, ...derived, status },
       });
       return toResponse(updated, userId, now);
     });
@@ -200,6 +212,10 @@ export class ListingsService {
       );
     }
   }
+}
+
+function searchTextFor(listing: { title: string; description: string }) {
+  return toSearchText(`${listing.title} ${listing.description}`);
 }
 
 function toResponse(

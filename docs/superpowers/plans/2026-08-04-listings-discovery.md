@@ -235,6 +235,19 @@ git commit -m "feat: screen and publish listings by risk"
 
 ### Task 4: Discovery API, cursor search and area aggregation
 
+> **Done (2026-10-04).** Deviations:
+> - No `discovery.repository.ts`: the service holds the one SQL query.
+> - Search uses an API-written, accent-free `search_text` column with an
+>   expression GIN index (`to_tsvector('simple', search_text)`), not a
+>   Postgres generated column with `unaccent`. Prisma ignores the expression
+>   index, so it causes no drift.
+> - Discovery also hides listings of suspended or deactivated owners.
+> - `EXPLAIN` assertion replaced by an index-existence check; both the
+>   owner-status condition and the cursor's id tie-breaker were
+>   mutation-tested (removing either fails a test).
+> - `GET /v1/discovery/areas` returns all 22 active areas, zeros included,
+>   in declaration order.
+
 **Files:**
 - Create: `packages/contracts/src/discovery.ts`
 - Create: `apps/api/src/modules/discovery/cursor.ts`
@@ -250,27 +263,27 @@ git commit -m "feat: screen and publish listings by risk"
 - Consumes: `PUBLISHED` listings.
 - Produces: `GET /v1/discovery/listings`; `GET /v1/discovery/areas`; opaque `nextCursor`.
 
-- [ ] **Step 1: Write failing pagination/filter tests**
+- [x] **Step 1: Write failing pagination/filter tests**
 
 Seed records sharing the same `publishedAt`; assert page 1 and page 2 have no duplicate/missing IDs. Assert non-published listings never appear and `area=HOC_MON&category=BOOKS&q=giao khoa` returns only matching rows.
 
-- [ ] **Step 2: Verify red state**
+- [x] **Step 2: Verify red state**
 
 Run: `pnpm --filter api test -- cursor && pnpm --filter api test:e2e -- discovery`
 
 Expected: FAIL because search indexes/repository are absent.
 
-- [ ] **Step 3: Implement query and stable cursor**
+- [x] **Step 3: Implement query and stable cursor**
 
 Encode `{ publishedAt, id }` as URL-safe base64 JSON; validate before query. Add PostgreSQL generated search vector/GIN index and composite discovery indexes. Return public owner summary only: display name, avatar, trust level, completed count; never phone/provider subject.
 
-- [ ] **Step 4: Run query plans and tests**
+- [x] **Step 4: Run query plans and tests**
 
 Run: `pnpm --filter api prisma migrate dev --name listing_search && pnpm --filter api test -- discovery && pnpm --filter api test:e2e -- discovery`
 
 Expected: PASS; seeded query uses relevant index under `EXPLAIN` assertion fixture.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/contracts/src/discovery.ts apps/api/prisma apps/api/src/modules/discovery apps/api/test/discovery.e2e-spec.ts

@@ -7,5 +7,6 @@ import { ListingsService } from './listings.service';
   imports: [IdentityModule],
   controllers: [ListingsController],
   providers: [ListingsService],
+  exports: [ListingsService],
 })
 export class ListingsModule {}

@@ -171,6 +171,9 @@ model Listing {
   title           String                  @db.VarChar(100)
   description     String                  @db.VarChar(2000)
   defects         String                  @default("") @db.VarChar(800)
+  /// toSearchText(title + description), written by the API. Full-text indexed
+  /// by an expression GIN index in the listing_search migration.
+  searchText      String                  @default("") @map("search_text")
   category        ItemCategory
   condition       ItemCondition
   areaCode        AreaCode                @map("area_code")
@@ -185,6 +188,8 @@ model Listing {
 
   @@index([ownerId, createdAt])
   @@index([status, publishedAt])
+  @@index([status, areaCode, publishedAt])
+  @@index([status, category, publishedAt])
   @@index([category])
   @@index([areaCode])
   @@map("listings")
