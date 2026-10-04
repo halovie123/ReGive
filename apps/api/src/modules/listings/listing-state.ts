@@ -51,17 +51,29 @@ export function transitionListing(
   return next;
 }
 
+type Expirable = { status: ListingStatus; expiresAt: Date | null };
+
 /**
- * The one definition of "anyone may see this listing". expiresAt is checked
- * here because nothing flips PUBLISHED to EXPIRED in the background.
- * RESERVED joins this set in Plan 3.
+ * The status every reader must use. The stored one lags: on the free tier
+ * nothing flips PUBLISHED to EXPIRED when expiresAt passes (sweepExpired
+ * catches up lazily), so a published listing past its expiry is EXPIRED
+ * here regardless of what the row says.
  */
-export function isPubliclyVisible(
-  listing: { status: ListingStatus; expiresAt: Date | null },
-  now: Date,
-): boolean {
-  return (
+export function effectiveStatus(listing: Expirable, now: Date): ListingStatus {
+  if (
     listing.status === 'PUBLISHED' &&
-    (listing.expiresAt === null || listing.expiresAt > now)
-  );
+    listing.expiresAt !== null &&
+    listing.expiresAt <= now
+  ) {
+    return 'EXPIRED';
+  }
+  return listing.status;
+}
+
+/**
+ * The one definition of "anyone may see this listing". RESERVED joins this
+ * set in Plan 3.
+ */
+export function isPubliclyVisible(listing: Expirable, now: Date): boolean {
+  return effectiveStatus(listing, now) === 'PUBLISHED';
 }

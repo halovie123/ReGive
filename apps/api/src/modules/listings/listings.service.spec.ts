@@ -93,6 +93,43 @@ class MemoryListingsDatabase {
       this.listings.set(id, stored);
       return Promise.resolve({ ...stored });
     },
+    updateMany: ({
+      where,
+      data,
+    }: {
+      where: { status: ListingStatus; expiresAt: { lte: Date } };
+      data: Partial<StoredListing>;
+    }) => {
+      let count = 0;
+      for (const [id, stored] of this.listings) {
+        if (
+          stored.status === where.status &&
+          stored.expiresAt !== null &&
+          stored.expiresAt <= where.expiresAt.lte
+        ) {
+          this.listings.set(id, { ...stored, ...data });
+          count += 1;
+        }
+      }
+      return Promise.resolve({ count });
+    },
+  };
+
+  readonly assessments: {
+    listingId: string;
+    level: string;
+    reasons: string[];
+  }[] = [];
+
+  readonly listingRiskAssessment = {
+    create: ({
+      data,
+    }: {
+      data: { listingId: string; level: string; reasons: string[] };
+    }) => {
+      this.assessments.push(data);
+      return Promise.resolve(data);
+    },
   };
 
   seed(overrides: Partial<StoredListing>): StoredListing {
@@ -102,7 +139,7 @@ class MemoryListingsDatabase {
       ownerId: DONOR,
       title: 'Tủ gỗ hai cánh',
       description: 'Tủ gỗ còn chắc chắn, phù hợp phòng ngủ nhỏ.',
-      defects: '',
+      defects: 'Trầy nhẹ ở góc',
       category: 'HOUSEHOLD',
       condition: 'GOOD',
       areaCode: 'HOC_MON',
@@ -214,20 +251,6 @@ describe('ListingsService', () => {
       });
     });
 
-    it('takes an edited live listing off the public feed until it is reviewed', async () => {
-      const live = database.seed({
-        status: 'PUBLISHED',
-        publishedAt: new Date('2026-10-02T00:00:00Z'),
-        expiresAt: new Date('2026-11-01T00:00:00Z'),
-      });
-
-      const updated = await service.update(DONOR, live.id, {
-        description: 'Mô tả mới hoàn toàn khác với bản đã duyệt trước đó.',
-      });
-
-      expect(updated.status).toBe('PENDING_REVIEW');
-    });
-
     it('refuses to move a listing into a switched-off area', async () => {
       const draft = database.seed({});
 
@@ -238,13 +261,150 @@ describe('ListingsService', () => {
   });
 
   describe('submit and withdraw', () => {
-    it('sends a submitted draft to review rather than straight to the public', async () => {
+    const DAY = 24 * 60 * 60 * 1000;
+
+    it('publishes a safe listing for 30 days and records the screening', async () => {
       const draft = database.seed({});
+
+      const published = await service.submit(DONOR, draft.id);
+
+      expect(published.status).toBe('PUBLISHED');
+      expect(
+        Date.parse(published.expiresAt!) - Date.parse(published.publishedAt!),
+      ).toBe(30 * DAY);
+      expect(database.assessments).toEqual([
+        { listingId: draft.id, level: 'LOW', reasons: [] },
+      ]);
+    });
+
+    it('holds a listing with a phone number for a moderator', async () => {
+      const draft = database.seed({
+        description: 'Tủ gỗ còn chắc chắn. Liên hệ 0909123456 để nhận.',
+      });
 
       await expect(service.submit(DONOR, draft.id)).resolves.toMatchObject({
         status: 'PENDING_REVIEW',
         publishedAt: null,
       });
+      expect(database.assessments[0]).toMatchObject({
+        level: 'MEDIUM',
+        reasons: ['CONTACT_PHONE'],
+      });
+    });
+
+    it('hides a forbidden item instead of publishing it', async () => {
+      const draft = database.seed({
+        title: 'Tặng thuốc cảm',
+        description: 'Còn hạn dùng tới cuối năm sau, ai cần thì nhắn.',
+      });
+
+      await expect(service.submit(DONOR, draft.id)).resolves.toMatchObject({
+        status: 'MODERATION_HIDDEN',
+        publishedAt: null,
+      });
+    });
+
+    /**
+     * The spec asks donors to state an item's defects. An empty field is
+     * allowed while drafting but not at submission; "Không có" is a valid
+     * answer for a new item.
+     */
+    it('refuses to submit a listing whose defects were left empty', async () => {
+      const draft = database.seed({ defects: '  ' });
+
+      await expect(service.submit(DONOR, draft.id)).rejects.toMatchObject({
+        status: 422,
+        publicProblem: { code: 'LISTING_INCOMPLETE' },
+      });
+      expect(database.listings.get(draft.id)?.status).toBe('DRAFT');
+      expect(database.assessments).toEqual([]);
+    });
+
+    /**
+     * Editing must not bump a listing back to the top of the feed or extend
+     * its life; only the first publication sets the dates.
+     */
+    it('keeps the original dates when a safe edit republishes a live listing', async () => {
+      const live = database.seed({
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-10-02T00:00:00.000Z'),
+        expiresAt: new Date('2099-11-01T00:00:00.000Z'),
+      });
+
+      const edited = await service.update(DONOR, live.id, {
+        condition: 'FAIR',
+      });
+
+      expect(edited).toMatchObject({
+        status: 'PUBLISHED',
+        publishedAt: '2026-10-02T00:00:00.000Z',
+        expiresAt: '2099-11-01T00:00:00.000Z',
+      });
+    });
+
+    it('screens the edited text, not the text it replaced', async () => {
+      const live = database.seed({
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-10-02T00:00:00.000Z'),
+        expiresAt: new Date('2099-11-01T00:00:00.000Z'),
+      });
+
+      await expect(
+        service.update(DONOR, live.id, {
+          description: 'Tủ gỗ còn tốt, ai cần gọi 0909123456 nhé mọi người.',
+        }),
+      ).resolves.toMatchObject({ status: 'PENDING_REVIEW' });
+    });
+
+    it('publishes a held listing once the owner removes what held it', async () => {
+      const held = database.seed({
+        status: 'PENDING_REVIEW',
+        description: 'Tủ gỗ còn chắc chắn. Liên hệ 0909123456 để nhận.',
+        defects: 'Trầy nhẹ ở góc',
+      });
+
+      await expect(
+        service.update(DONOR, held.id, {
+          description:
+            'Tủ gỗ còn chắc chắn, phù hợp phòng ngủ nhỏ, nhắn tin trong app.',
+        }),
+      ).resolves.toMatchObject({ status: 'PUBLISHED' });
+    });
+
+    it('treats a published listing past its expiry as expired', async () => {
+      const stale = database.seed({
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-08-01T00:00:00.000Z'),
+        expiresAt: new Date('2026-08-31T00:00:00.000Z'),
+      });
+
+      await expect(service.get(DONOR, stale.id)).resolves.toMatchObject({
+        status: 'EXPIRED',
+      });
+      await expect(
+        service.update(DONOR, stale.id, { condition: 'FAIR' }),
+      ).rejects.toMatchObject({
+        publicProblem: { code: 'LISTING_STATE_INVALID' },
+      });
+    });
+
+    it('marks due listings EXPIRED, and only those, however often it runs', async () => {
+      const due = database.seed({
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-08-01T00:00:00.000Z'),
+        expiresAt: new Date('2026-08-31T00:00:00.000Z'),
+      });
+      const live = database.seed({
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-10-01T00:00:00.000Z'),
+        expiresAt: new Date('2099-01-01T00:00:00.000Z'),
+      });
+      const now = new Date('2026-10-04T08:00:00.000Z');
+
+      await expect(service.sweepExpired(now)).resolves.toBe(1);
+      await expect(service.sweepExpired(now)).resolves.toBe(0);
+      expect(database.listings.get(due.id)?.status).toBe('EXPIRED');
+      expect(database.listings.get(live.id)?.status).toBe('PUBLISHED');
     });
 
     it('withdraws a listing for its owner only', async () => {

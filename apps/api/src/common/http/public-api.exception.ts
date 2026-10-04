@@ -17,7 +17,8 @@ export type PublicProblemCode =
   | 'DONOR_ROLE_REQUIRED'
   | 'LISTING_NOT_FOUND'
   | 'LISTING_FORBIDDEN'
-  | 'LISTING_STATE_INVALID';
+  | 'LISTING_STATE_INVALID'
+  | 'LISTING_INCOMPLETE';
 
 export type PublicProblem = {
   code: PublicProblemCode;

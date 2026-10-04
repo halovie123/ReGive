@@ -174,6 +174,20 @@ git commit -m "feat: add secure listing image pipeline"
 
 ### Task 3: Risk screening, publish workflow and expiry job
 
+> **Done (2026-10-04), before Task 2.** Task 2 needs a real Supabase bucket and
+> storage keys to verify; this task does not. Deviations:
+> - No `listing-policy.ts` or `listing-expiry.worker.ts` (no Redis). Expiry is
+>   `effectiveStatus()`, applied by every reader; `sweepExpired()` is
+>   idempotent bookkeeping that discovery will call lazily.
+> - **Still owed by Task 2:** "publish requires at least one READY image" and
+>   duplicate-image-hash screening. Both need images to exist.
+> - Defects must be non-empty at submission ("Không có" is fine); a draft may
+>   leave them empty.
+> - A safe edit to a live listing republishes it with its original dates, so
+>   editing cannot bump it up the feed or extend its life.
+> - HTTP tests live in `listings.e2e-spec.ts` (shared in-memory database), not
+>   a separate `listing-publish.e2e-spec.ts`.
+
 **Files:**
 - Create: `apps/api/src/modules/listings/listing-risk.ts`
 - Create: `apps/api/src/modules/listings/listing-policy.ts`
@@ -186,7 +200,7 @@ git commit -m "feat: add secure listing image pipeline"
 - Consumes: listing/images from Tasks 1–2.
 - Produces: `assessListing(input): {level:'LOW'|'MEDIUM'|'HIGH'; reasons:string[]}` and deterministic publish decision.
 
-- [ ] **Step 1: Write policy table tests**
+- [x] **Step 1: Write policy table tests**
 
 ```ts
 expect(assessListing({ title: 'Tặng thuốc', description: 'còn hạn', defects: '' }).level).toBe('HIGH');
@@ -196,23 +210,23 @@ expect(assessListing(safeBookFixture).level).toBe('LOW');
 
 Also test publish requires at least one `READY` image and complete defects/condition.
 
-- [ ] **Step 2: Run and see tests fail**
+- [x] **Step 2: Run and see tests fail**
 
 Run: `pnpm --filter api test -- listing-risk && pnpm --filter api test:e2e -- listing-publish`
 
 Expected: FAIL with missing assessor.
 
-- [ ] **Step 3: Implement deterministic screening**
+- [x] **Step 3: Implement deterministic screening**
 
 Normalize Vietnamese text, match blocked category terms, phone/email/URL patterns and duplicate image hashes. Persist reason codes in `ListingRiskAssessment`. LOW publishes with 30-day expiry; MEDIUM becomes `PENDING_REVIEW`; HIGH becomes `MODERATION_HIDDEN`. Expiry worker changes due `PUBLISHED` records to `EXPIRED` idempotently.
 
-- [ ] **Step 4: Verify all branches**
+- [x] **Step 4: Verify all branches**
 
 Run: `pnpm --filter api test -- listing && pnpm --filter api test:e2e -- listing-publish`
 
 Expected: PASS with exact LOW/MEDIUM/HIGH state assertions and repeatable expiry job.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/listings apps/api/test/listing-publish.e2e-spec.ts

@@ -98,7 +98,7 @@ describeDatabase('Listings with PostgreSQL (e2e)', () => {
     await moduleRef?.close();
   });
 
-  it('round-trips a listing through create, edit, submit and withdraw', async () => {
+  it('round-trips a listing through create, edit, publish and withdraw', async () => {
     const created = await listings!.create(ownerId, newListing);
     expect(created).toMatchObject({ ...newListing, status: 'DRAFT' });
 
@@ -106,7 +106,7 @@ describeDatabase('Listings with PostgreSQL (e2e)', () => {
       listings!.update(ownerId, created.id, { areaCode: 'HOC_MON' }),
     ).resolves.toMatchObject({ areaCode: 'HOC_MON' });
     await expect(listings!.submit(ownerId, created.id)).resolves.toMatchObject({
-      status: 'PENDING_REVIEW',
+      status: 'PUBLISHED',
     });
     await expect(
       listings!.update(otherId, created.id, { title: 'Không phải của tôi' }),
@@ -161,6 +161,51 @@ describeDatabase('Listings with PostgreSQL (e2e)', () => {
     });
     await expect(listings!.get(otherId, created.id)).rejects.toMatchObject({
       publicProblem: { code: 'LISTING_NOT_FOUND' },
+    });
+  });
+
+  it('stores each screening with its reason codes', async () => {
+    const created = await listings!.create(ownerId, {
+      ...newListing,
+      description: 'Nấu vẫn chín đều, đủ dây điện. Gọi 0909123456 để nhận.',
+    });
+
+    await expect(listings!.submit(ownerId, created.id)).resolves.toMatchObject({
+      status: 'PENDING_REVIEW',
+    });
+    await expect(
+      prisma!.listingRiskAssessment.findMany({
+        where: { listingId: created.id },
+        select: { level: true, reasons: true },
+      }),
+    ).resolves.toEqual([{ level: 'MEDIUM', reasons: ['CONTACT_PHONE'] }]);
+  });
+
+  it('sweeps due listings to EXPIRED and nothing else', async () => {
+    const due = await listings!.create(ownerId, newListing);
+    const live = await listings!.create(ownerId, newListing);
+    await prisma!.listing.update({
+      where: { id: due.id },
+      data: {
+        status: 'PUBLISHED',
+        publishedAt: new Date(Date.now() - 2 * 60_000),
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+    await listings!.submit(ownerId, live.id);
+
+    await listings!.sweepExpired();
+    await listings!.sweepExpired();
+
+    const statuses = await prisma!.listing.findMany({
+      where: { id: { in: [due.id, live.id] } },
+      select: { id: true, status: true },
+    });
+    expect(
+      Object.fromEntries(statuses.map((row) => [row.id, row.status])),
+    ).toEqual({
+      [due.id]: 'EXPIRED',
+      [live.id]: 'PUBLISHED',
     });
   });
 });

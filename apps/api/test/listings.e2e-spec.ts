@@ -59,6 +59,10 @@ class MemoryDatabase {
       Promise.resolve(this.roles.get(userId)?.includes(role) ? { role } : null),
   };
 
+  readonly listingRiskAssessment = {
+    create: ({ data }: { data: unknown }) => Promise.resolve(data),
+  };
+
   readonly area = {
     findUnique: () => Promise.resolve({ active: true }),
   };
@@ -187,7 +191,7 @@ describe('Listings API (e2e)', () => {
       );
   });
 
-  it('runs the owner flow: draft, edit, submit for review, withdraw', async () => {
+  it('runs the owner flow: draft, edit, publish, withdraw', async () => {
     const created = await request(app.getHttpServer())
       .post('/v1/listings')
       .set(owner)
@@ -210,7 +214,7 @@ describe('Listings API (e2e)', () => {
       .set(owner)
       .expect(200)
       .expect(({ body }) =>
-        expect(body).toMatchObject({ status: 'PENDING_REVIEW' }),
+        expect(body).toMatchObject({ status: 'PUBLISHED' }),
       );
 
     await request(app.getHttpServer())
@@ -247,5 +251,62 @@ describe('Listings API (e2e)', () => {
         expect(body).toMatchObject({ code: 'LISTING_FORBIDDEN' }),
       );
     await request(app.getHttpServer()).get(path).set(stranger).expect(404);
+  });
+
+  it('lets other members see a published listing, without owner rights', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/v1/listings')
+      .set(owner)
+      .send(listing)
+      .expect(201);
+    const path = `/v1/listings/${(created.body as { id: string }).id}`;
+    await request(app.getHttpServer())
+      .post(`${path}/publish`)
+      .set(owner)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(path)
+      .set(stranger)
+      .expect(200)
+      .expect(({ body }) =>
+        expect(body).toMatchObject({ status: 'PUBLISHED', isOwner: false }),
+      );
+  });
+
+  it.each([
+    [
+      'holds a listing with a phone number for review',
+      { description: 'Xe còn chạy tốt, ai cần gọi 0909123456 để nhận nhé.' },
+      200,
+      { status: 'PENDING_REVIEW' },
+    ],
+    [
+      'hides a forbidden item',
+      {
+        title: 'Tặng thuốc cảm',
+        description: 'Còn hạn dùng, ai cần thì nhắn mình.',
+      },
+      200,
+      { status: 'MODERATION_HIDDEN' },
+    ],
+    [
+      'refuses to publish without stated defects',
+      { defects: '' },
+      422,
+      { code: 'LISTING_INCOMPLETE' },
+    ],
+  ])('%s', async (_label, override, expectedStatus, expectedBody) => {
+    const created = await request(app.getHttpServer())
+      .post('/v1/listings')
+      .set(owner)
+      .send({ ...listing, ...override })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/v1/listings/${(created.body as { id: string }).id}/publish`)
+      .set(owner)
+      .expect(expectedStatus)
+      .expect(({ body }) => expect(body).toMatchObject(expectedBody));
   });
 });

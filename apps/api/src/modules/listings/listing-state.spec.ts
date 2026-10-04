@@ -1,6 +1,7 @@
 import type { ListingStatus } from '@prisma/client';
 import { PublicApiException } from '../../common/http/public-api.exception';
 import {
+  effectiveStatus,
   isPubliclyVisible,
   transitionListing,
   type ListingEvent,
@@ -103,5 +104,38 @@ describe('isPubliclyVisible', () => {
     'MODERATION_HIDDEN',
   ])('never shows a %s listing', (status) => {
     expect(isPubliclyVisible({ status, expiresAt: null }, now)).toBe(false);
+  });
+});
+
+describe('effectiveStatus', () => {
+  const now = new Date('2026-10-04T08:00:00.000Z');
+
+  /**
+   * The stored status can lag: nothing on the free tier flips PUBLISHED to
+   * EXPIRED the moment expiresAt passes. Every reader -- the owner's view,
+   * the transition check, discovery -- must agree it has expired anyway.
+   */
+  it('reports a published listing past its expiry as EXPIRED', () => {
+    expect(
+      effectiveStatus(
+        { status: 'PUBLISHED', expiresAt: new Date('2026-10-04T07:00:00Z') },
+        now,
+      ),
+    ).toBe('EXPIRED');
+  });
+
+  it('leaves every other case as stored', () => {
+    expect(
+      effectiveStatus(
+        { status: 'PUBLISHED', expiresAt: new Date('2026-10-05T00:00:00Z') },
+        now,
+      ),
+    ).toBe('PUBLISHED');
+    expect(
+      effectiveStatus(
+        { status: 'DRAFT', expiresAt: new Date('2026-01-01T00:00:00Z') },
+        now,
+      ),
+    ).toBe('DRAFT');
   });
 });
