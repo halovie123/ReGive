@@ -7,6 +7,7 @@ import { resolveApiPort } from './api-port';
 import { envSchema } from './common/config/env.schema';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { IdentityModule } from './modules/identity/identity.module';
+import { ListingsModule } from './modules/listings/listings.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
     AppModule,
     IdentityModule,
     ProfilesModule,
+    ListingsModule,
   ],
 })
 class BootstrapModule {}

@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpStatus,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import {
   UpdateActiveRoleSchema,
   UpdateAreasSchema,
@@ -13,8 +6,7 @@ import {
   UpdateRolesSchema,
   type MeResponse,
 } from '@buy-nothing/contracts';
-import type { z } from 'zod';
-import { PublicApiException } from '../../common/http/public-api.exception';
+import { parseInput } from '../../common/http/parse-input';
 import { CurrentUser } from '../identity/current-user.decorator';
 import type { CurrentUser as AuthenticatedUser } from '../identity/identity.types';
 import { JwtAuthGuard } from '../identity/jwt-auth.guard';
@@ -37,7 +29,7 @@ export class ProfilesController {
   ): Promise<MeResponse> {
     return this.profiles.updateProfile(
       currentUser.id,
-      this.parse(UpdateProfileSchema, body),
+      parseInput(UpdateProfileSchema, body),
     );
   }
 
@@ -48,7 +40,7 @@ export class ProfilesController {
   ): Promise<MeResponse> {
     return this.profiles.updateRoles(
       currentUser.id,
-      this.parse(UpdateRolesSchema, body).roles,
+      parseInput(UpdateRolesSchema, body).roles,
     );
   }
 
@@ -59,7 +51,7 @@ export class ProfilesController {
   ): Promise<MeResponse> {
     return this.profiles.updateActiveRole(
       currentUser.id,
-      this.parse(UpdateActiveRoleSchema, body).activeRole,
+      parseInput(UpdateActiveRoleSchema, body).activeRole,
     );
   }
 
@@ -70,17 +62,7 @@ export class ProfilesController {
   ): Promise<MeResponse> {
     return this.profiles.updateAreas(
       currentUser.id,
-      this.parse(UpdateAreasSchema, body).areas,
-    );
-  }
-
-  private parse<T extends z.ZodType>(schema: T, body: unknown): z.output<T> {
-    const result = schema.safeParse(body);
-    if (result.success) return result.data;
-    throw new PublicApiException(
-      HttpStatus.UNPROCESSABLE_ENTITY,
-      'INVALID_INPUT',
-      'Dữ liệu không hợp lệ.',
+      parseInput(UpdateAreasSchema, body).areas,
     );
   }
 }

@@ -59,6 +59,12 @@ thực tế đã thay đổi; khi đọc task, áp dụng các sửa đổi này
 
 ### Task 1: Listing domain, persistence and state transitions
 
+> **Done (2026-10-04).** Deviations: no `listings.repository.ts` — the service
+> uses Prisma directly, as `profiles.service.ts` does. Added
+> `listings.service.spec.ts` (authorization against an in-memory database) and
+> `listings-db.e2e-spec.ts` (real Postgres: foreign keys, enum columns, and the
+> migration's CHECK constraints). Responses carry `isOwner`, never `ownerId`.
+
 **Files:**
 - Modify: `packages/contracts/src/enums.ts`
 - Create: `packages/contracts/src/listings.ts`
@@ -76,7 +82,7 @@ thực tế đã thay đổi; khi đọc task, áp dụng các sửa đổi này
 - Consumes: authenticated user, `AreaCode` and user roles from Plan 1.
 - Produces: `POST /v1/listings`, `GET/PATCH /v1/listings/:id`, `POST /v1/listings/:id/publish`, `POST /v1/listings/:id/withdraw`.
 
-- [ ] **Step 1: Write failing transition and authorization tests**
+- [x] **Step 1: Write failing transition and authorization tests**
 
 ```ts
 expect(transitionListing('DRAFT', 'SUBMIT')).toBe('PENDING_REVIEW');
@@ -84,13 +90,13 @@ expect(() => transitionListing('COMPLETED', 'EDIT')).toThrow('LISTING_STATE_INVA
 await expect(service.update(otherUserId, listingId, input)).rejects.toMatchObject({ code: 'LISTING_FORBIDDEN' });
 ```
 
-- [ ] **Step 2: Verify red state**
+- [x] **Step 2: Verify red state**
 
 Run: `pnpm --filter api test -- listing-state && pnpm --filter api test:e2e -- listings`
 
 Expected: FAIL because listing contracts/models are absent.
 
-- [ ] **Step 3: Implement contracts and model**
+- [x] **Step 3: Implement contracts and model**
 
 Define exact values:
 
@@ -102,13 +108,13 @@ const ITEM_CONDITIONS = ['NEW', 'LIKE_NEW', 'GOOD', 'FAIR'] as const;
 
 Create `Listing(id, ownerId, title, description, defects, category, condition, areaCode, status, publishedAt, expiresAt, createdAt, updatedAt)` and indexes on status/category/area/publishedAt. Require DONOR role, title 5–100, description 20–2000 and defects 0–800.
 
-- [ ] **Step 4: Migrate and verify**
+- [x] **Step 4: Migrate and verify**
 
 Run: `pnpm --filter api prisma migrate dev --name listings && pnpm --filter api test && pnpm --filter api test:e2e -- listings`
 
 Expected: PASS; completed/hidden listings reject edits; unauthorized access returns 403.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/contracts apps/api/prisma apps/api/src/modules/listings apps/api/test/listings.e2e-spec.ts

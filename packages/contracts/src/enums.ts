@@ -40,3 +40,41 @@ export const AreaCodeSchema = z.enum(AREA_CODES);
 
 export type UserRole = z.infer<typeof UserRoleSchema>;
 export type AreaCode = z.infer<typeof AreaCodeSchema>;
+
+/**
+ * Lifecycle from the spec (section 7): DRAFT → PUBLISHED → RESERVED →
+ * COMPLETED, plus withdrawal, expiry and moderation branches. PENDING_REVIEW
+ * sits between DRAFT and PUBLISHED so nothing goes public unscreened.
+ */
+export const LISTING_STATUSES = [
+  'DRAFT',
+  'PENDING_REVIEW',
+  'PUBLISHED',
+  'RESERVED',
+  'COMPLETED',
+  'WITHDRAWN',
+  'EXPIRED',
+  'MODERATION_HIDDEN',
+] as const;
+
+/**
+ * The only five categories the MVP accepts. Money, medicine, perishable food
+ * and dangerous goods are excluded by having no category at all.
+ */
+export const ITEM_CATEGORIES = [
+  'HOUSEHOLD',
+  'CLOTHING',
+  'BOOKS',
+  'CHILDREN',
+  'DEVICES',
+] as const;
+
+export const ITEM_CONDITIONS = ['NEW', 'LIKE_NEW', 'GOOD', 'FAIR'] as const;
+
+export const ListingStatusSchema = z.enum(LISTING_STATUSES);
+export const ItemCategorySchema = z.enum(ITEM_CATEGORIES);
+export const ItemConditionSchema = z.enum(ITEM_CONDITIONS);
+
+export type ListingStatus = z.infer<typeof ListingStatusSchema>;
+export type ItemCategory = z.infer<typeof ItemCategorySchema>;
+export type ItemCondition = z.infer<typeof ItemConditionSchema>;

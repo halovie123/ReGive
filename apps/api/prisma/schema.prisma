@@ -49,6 +49,38 @@ enum AreaCode {
   @@map("area_code")
 }
 
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  RESERVED
+  COMPLETED
+  WITHDRAWN
+  EXPIRED
+  MODERATION_HIDDEN
+
+  @@map("listing_status")
+}
+
+enum ItemCategory {
+  HOUSEHOLD
+  CLOTHING
+  BOOKS
+  CHILDREN
+  DEVICES
+
+  @@map("item_category")
+}
+
+enum ItemCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+
+  @@map("item_condition")
+}
+
 /// Sign-in is Google/Facebook OAuth only. The four phone columns
 /// (encrypted_phone, phone_last4, phone_verified_at,
 /// phone_encryption_key_version) were dropped by
@@ -64,6 +96,7 @@ model User {
   roleAssignments RoleAssignment[]
   profile         Profile?
   areaAssignments UserArea[]
+  listings        Listing[]
 
   @@index([status])
   @@map("users")
@@ -88,6 +121,7 @@ model Area {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   userAreas UserArea[]
+  listings  Listing[]
 
   @@index([active])
   @@map("areas")
@@ -117,4 +151,32 @@ model UserArea {
   @@unique([userId, areaCode])
   @@index([areaCode])
   @@map("user_areas")
+}
+
+/// Carries an area, never an address or coordinates (spec: public listings
+/// show only the AreaCode). Visibility is status = PUBLISHED and expiresAt in
+/// the future -- there is no background job to mark EXPIRED on the free
+/// tier, so read paths must check expiresAt themselves.
+model Listing {
+  id          String        @id @default(uuid()) @db.Uuid
+  ownerId     String        @map("owner_id") @db.Uuid
+  title       String        @db.VarChar(100)
+  description String        @db.VarChar(2000)
+  defects     String        @default("") @db.VarChar(800)
+  category    ItemCategory
+  condition   ItemCondition
+  areaCode    AreaCode      @map("area_code")
+  status      ListingStatus @default(DRAFT)
+  publishedAt DateTime?     @map("published_at") @db.Timestamptz(3)
+  expiresAt   DateTime?     @map("expires_at") @db.Timestamptz(3)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  area        Area          @relation(fields: [areaCode], references: [code], onDelete: Restrict)
+
+  @@index([ownerId, createdAt])
+  @@index([status, publishedAt])
+  @@index([category])
+  @@index([areaCode])
+  @@map("listings")
 }

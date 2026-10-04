@@ -13,7 +13,11 @@ export type PublicProblemCode =
   | 'NOT_READY'
   | 'ROLE_NOT_ASSIGNED'
   | 'AREA_UNAVAILABLE'
-  | 'AREA_SELECTION_INVALID';
+  | 'AREA_SELECTION_INVALID'
+  | 'DONOR_ROLE_REQUIRED'
+  | 'LISTING_NOT_FOUND'
+  | 'LISTING_FORBIDDEN'
+  | 'LISTING_STATE_INVALID';
 
 export type PublicProblem = {
   code: PublicProblemCode;
