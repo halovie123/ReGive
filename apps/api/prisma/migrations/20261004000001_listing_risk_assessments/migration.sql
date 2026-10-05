@@ -21,3 +21,7 @@ CREATE INDEX "listing_risk_assessments_listing_id_created_at_idx" ON "listing_ri
 
 -- AddForeignKey
 ALTER TABLE "listing_risk_assessments" ADD CONSTRAINT "listing_risk_assessments_listing_id_fkey" FOREIGN KEY ("listing_id") REFERENCES "listings"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Closed to Supabase's Data API from birth (see
+-- 20260907000000_enable_row_level_security).
+ALTER TABLE "listing_risk_assessments" ENABLE ROW LEVEL SECURITY;

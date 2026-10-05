@@ -58,7 +58,9 @@ Mỗi mảng do một agent độc lập soi, có tấn công/đo đạc thật 
 
 3. **Cột enum Postgres sort theo thứ tự KHAI BÁO, không phải bảng chữ cái.** Đã cắn 2 lần. Sau khi mở rộng 22 quận, `HOC_MON` ở vị trí 17 chứ không phải 0. Mọi assertion về thứ tự phải kiểm lại.
 
-4. **Test xanh không có nghĩa là chạy được.** API từng không khởi động nổi ở bất kỳ chế độ nào trong khi 79 test vẫn xanh. Giờ đã có `corepack pnpm --filter api smoke` (build + khởi động server thật + gọi `/v1/health`) trong CI. Ảnh chụp bắt được lỗi mà test không bắt được (logo từng render thành cục vô nghĩa với mọi test xanh).
+4. **Mọi bảng mới phải bật RLS trong migration của nó.** Supabase mở mọi bảng trong `public` qua Data API bằng anon key (công khai, nằm trong bundle web); trước migration `20260907000000_enable_row_level_security` không bảng nào có RLS, nên ai cầm anon key cũng đọc/sửa được `users`, `profiles`. API kết nối bằng chủ bảng nên không bị ảnh hưởng. `test/row-level-security-db.e2e-spec.ts` sẽ đỏ nếu quên.
+
+5. **Test xanh không có nghĩa là chạy được.** API từng không khởi động nổi ở bất kỳ chế độ nào trong khi 79 test vẫn xanh. Giờ đã có `corepack pnpm --filter api smoke` (build + khởi động server thật + gọi `/v1/health`) trong CI. Ảnh chụp bắt được lỗi mà test không bắt được (logo từng render thành cục vô nghĩa với mọi test xanh).
 
 ---
 

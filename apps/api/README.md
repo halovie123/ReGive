@@ -46,6 +46,11 @@ not start at all.
 
 ## Gotchas
 
+- **Every new table needs `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` in its
+  migration.** Supabase exposes the public schema over its Data API using the
+  public anon key; RLS with no policies closes it, and the API (the table
+  owner) is unaffected. `test/row-level-security-db.e2e-spec.ts` fails
+  otherwise.
 - Do not import runtime values from `@buy-nothing/contracts` into code that
   unit tests load: contracts ships ESM from `dist/` and the Jest config cannot
   transform it. `import type` is fine.

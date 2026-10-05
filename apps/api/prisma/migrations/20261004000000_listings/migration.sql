@@ -60,3 +60,8 @@ ALTER TABLE "listings" ADD CONSTRAINT "listings_description_length_check"
 -- background job to fix a PUBLISHED row missing them, so refuse one outright.
 ALTER TABLE "listings" ADD CONSTRAINT "listings_published_dates_check"
     CHECK ("status" <> 'PUBLISHED' OR ("published_at" IS NOT NULL AND "expires_at" IS NOT NULL));
+
+-- Closed to Supabase's Data API from birth, like every other table (see
+-- 20260907000000_enable_row_level_security). The API connects as the
+-- owner, which RLS does not restrict.
+ALTER TABLE "listings" ENABLE ROW LEVEL SECURITY;
