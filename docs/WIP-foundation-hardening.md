@@ -27,6 +27,8 @@ toàn bộ đã merge.
 | 16 | _(HANDOFF §4)_ `(app)/loading.tsx`, `(app)/error.tsx` không có test | ✅ xong |
 | 17 | _(HANDOFF §4)_ Đổi `orderBy` areas sang `desc` không đỏ test nào | ✅ xong |
 | 18 | _(phát sinh)_ Typecheck/lint API đỏ sau mục 1/5/8; Jest e2e hỏng vì worktree lồng | ✅ xong |
+| 19 | _(phát sinh, nghiêm trọng)_ Bảng không có RLS → anon key đọc/sửa được qua Data API của Supabase | ✅ xong (chờ xác nhận trên production) |
+| 20 | _(phát sinh)_ Supabase free tự dừng project khi ít hoạt động → workflow ping `/v1/ready` | ✅ xong |
 
 Ký hiệu: ⬜ chưa · 🔄 đang làm · ✅ xong (test xanh) · ⛔ bỏ, có lý do
 
@@ -233,7 +235,45 @@ ngược. Chạy trên Postgres 17 local: 5/5 pass; đổi `orderBy` sang `desc`
   mọi e2e import contracts (kể cả `foundation-gate`) không chạy được trên
   máy này. Thêm `roots: ["<rootDir>/apps/api/test"]`.
 
+### ✅ Mục 19 — RLS (nghiêm trọng)
+
+Supabase phục vụ mọi bảng trong schema `public` qua Data API (PostgREST),
+xác thực bằng **anon key — công khai, nằm trong bundle web**. Quyền mặc định
+của Supabase cấp ALL cho `anon`/`authenticated` trên mọi bảng migration tạo,
+và không bảng nào bật RLS. Audit trước chỉ tấn công API NestJS, không thử
+đường này.
+
+Tái hiện trên Postgres 17 với quyền mặc định giống Supabase: dưới vai trò
+`anon`, `SELECT` trên `users` trả về dữ liệu và `UPDATE` đổi được một tài
+khoản sang `SUSPENDED`. **Chưa xác nhận trên production** vì project đang bị
+dừng (2026-10-05).
+
+Sửa: migration `20260907000000_enable_row_level_security` bật RLS (không
+policy) trên mọi bảng hiện có, thu hồi quyền của `anon`/`authenticated` kể cả
+quyền mặc định cho bảng tương lai (chỉ khi vai trò tồn tại). API kết nối bằng
+chủ bảng nên không bị RLS chặn — bộ test DB chạy xanh trên database đã bật RLS.
+Web không dùng Data API (đã grep: không có `.from(`/`.rpc(`).
+
+Chống tái phát: `test/row-level-security-db.e2e-spec.ts` fail nếu bất kỳ bảng
+nào trong `public` thiếu RLS hoặc `anon` còn quyền. CI chạy
+`prisma/ci/emulate-supabase-roles.sql` trước migration để kiểm trên quyền
+giống production. Đỏ→xanh: 2 fail khi thiếu migration, 2 pass khi có.
+
+### ✅ Mục 20 — chống Supabase tự dừng project
+
+Project bị dừng vì gói free dừng project ít hoạt động database trong một
+tuần → đăng nhập và mọi trang sau đăng nhập chết. `/v1/health` vẫn báo 200
+(liveness không chạm DB) — đúng lý do mục 5 thêm `/v1/ready`.
+
+`.github/workflows/keep-alive.yml`: 6 giờ/lần gọi `/v1/ready` (chạy
+`SELECT 1`, đồng thời đánh thức Render). Run fail = API hoặc DB chết, GitHub
+gửi email cho chủ repo. Chỉ chạy sau khi merge vào `main` và `/v1/ready` đã
+deploy; GitHub tắt workflow định kỳ sau 60 ngày repo không có hoạt động.
+
 ## Việc còn lại của người dùng (không phải của agent)
+
+0. **Bấm "Resume project" trên Supabase** (miễn phí, không cần Pro). Đến khi
+   resume, không ai đăng nhập được trên site thật.
 
 1. Merge `chore/remove-phone-verification` vào `main` → deploy.
 2. **Rồi mới** `corepack pnpm --filter api exec prisma migrate deploy`.
