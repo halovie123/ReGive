@@ -27,7 +27,7 @@ toàn bộ đã merge.
 | 16 | _(HANDOFF §4)_ `(app)/loading.tsx`, `(app)/error.tsx` không có test | ✅ xong |
 | 17 | _(HANDOFF §4)_ Đổi `orderBy` areas sang `desc` không đỏ test nào | ✅ xong |
 | 18 | _(phát sinh)_ Typecheck/lint API đỏ sau mục 1/5/8; Jest e2e hỏng vì worktree lồng | ✅ xong |
-| 19 | _(phát sinh, nghiêm trọng)_ Bảng không có RLS → anon key đọc/sửa được qua Data API của Supabase | ✅ xong (chờ xác nhận trên production) |
+| 19 | _(phát sinh, nghiêm trọng)_ Bảng không có RLS → anon key đọc/sửa được qua Data API của Supabase | ✅ xong — đã đóng trên production 2026-10-05 |
 | 20 | _(phát sinh)_ Supabase free tự dừng project khi ít hoạt động → workflow ping `/v1/ready` | ✅ xong |
 
 Ký hiệu: ⬜ chưa · 🔄 đang làm · ✅ xong (test xanh) · ⛔ bỏ, có lý do
@@ -245,8 +245,26 @@ và không bảng nào bật RLS. Audit trước chỉ tấn công API NestJS, k
 
 Tái hiện trên Postgres 17 với quyền mặc định giống Supabase: dưới vai trò
 `anon`, `SELECT` trên `users` trả về dữ liệu và `UPDATE` đổi được một tài
-khoản sang `SUSPENDED`. **Chưa xác nhận trên production** vì project đang bị
-dừng (2026-10-05).
+khoản sang `SUSPENDED`.
+
+**Xác nhận trên production (2026-10-05, sau khi resume):** chỉ với anon key,
+`GET /rest/v1/areas` trả dữ liệu; `GET /rest/v1/users` (limit=0, chỉ đếm)
+trả `Content-Range: */2`; `PATCH /rest/v1/users` nhắm id không tồn tại trả
+204 → có quyền ghi. Bản web đang chạy (`main`) không dùng Data API, vai trò
+`postgres` của API là chủ mọi bảng và có `BYPASSRLS`.
+
+**Đã đóng trên production cùng ngày** (chủ sản phẩm đồng ý): chạy nguyên văn
+SQL của migration `20260907000000` trong một transaction. Sau đó 3 bài thử
+trên đều trả 401 `permission denied`; web/API vẫn 200, `/v1/me` không token
+vẫn 401. Migration chưa được ghi vào `_prisma_migrations`; `migrate deploy`
+lúc merge sẽ chạy lại nó, an toàn vì mọi lệnh đều idempotent.
+
+Kiểm tra toàn vẹn (chỉ metadata): 2 user đều `ACTIVE`, 22 khu vực đều bật,
+thay đổi cuối của mọi bảng là 2026-09-04. **Không loại trừ được**: `updated_at`
+do Prisma ghi phía ứng dụng nên sửa qua Data API không làm nó đổi, và việc
+đọc không để lại dấu vết trong dữ liệu. Phạm vi lộ nếu có: tên hiển thị, bio,
+vai trò, khu vực, provider subject của 2 tài khoản; email/mật khẩu nằm ở
+schema `auth`, không bị mở.
 
 Sửa: migration `20260907000000_enable_row_level_security` bật RLS (không
 policy) trên mọi bảng hiện có, thu hồi quyền của `anon`/`authenticated` kể cả
@@ -272,8 +290,7 @@ deploy; GitHub tắt workflow định kỳ sau 60 ngày repo không có hoạt �
 
 ## Việc còn lại của người dùng (không phải của agent)
 
-0. **Bấm "Resume project" trên Supabase** (miễn phí, không cần Pro). Đến khi
-   resume, không ai đăng nhập được trên site thật.
+0. ~~Bấm "Resume project" trên Supabase~~ **Đã làm 2026-10-05.**
 
 1. Merge `chore/remove-phone-verification` vào `main` → deploy.
 2. **Rồi mới** `corepack pnpm --filter api exec prisma migrate deploy`.
