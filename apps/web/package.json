@@ -6,9 +6,9 @@
   "scripts": {
     "contracts:build": "node ../../scripts/ensure-contracts-built.mjs",
     "predev": "node ../../scripts/ensure-contracts-built.mjs",
-    "dev": "next dev --webpack",
+    "dev": "next dev",
     "prebuild": "node ../../scripts/ensure-contracts-built.mjs",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "pretest": "node ../../scripts/ensure-contracts-built.mjs",

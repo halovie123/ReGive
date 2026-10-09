@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -39,11 +39,12 @@ type OnboardingValues = z.infer<typeof OnboardingSchema>;
  */
 export function OnboardingForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<OnboardingValues>({
     resolver: zodResolver(OnboardingSchema),
     defaultValues: { displayName: '', bio: '', roles: [], areas: [] },
@@ -51,14 +52,19 @@ export function OnboardingForm() {
 
   const selectedAreas = watch('areas') ?? [];
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = handleSubmit((values) => {
     setSubmitError(null);
-    const result = await submitOnboardingProfile(values);
-    if (result.status === 'error') {
-      setSubmitError(result.message);
-    }
-    // On success, submitOnboardingProfile redirects server-side and this
-    // component unmounts before we get here.
+    // Inside a transition, not awaited by react-hook-form: on success the
+    // action redirects, and Next rejects the action promise with a
+    // NEXT_REDIRECT error meant for its RedirectBoundary. Only a transition
+    // routes that rejection to a React boundary; returned to
+    // react-hook-form it became an unhandled rejection on every sign-up.
+    startTransition(async () => {
+      const result = await submitOnboardingProfile(values);
+      if (result.status === 'error') {
+        setSubmitError(result.message);
+      }
+    });
   });
 
   return (
@@ -123,8 +129,8 @@ export function OnboardingForm() {
       )}
 
       <div className="auth-form-actions">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Đang lưu...' : 'Hoàn tất đăng ký'}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? 'Đang lưu...' : 'Hoàn tất đăng ký'}
         </Button>
       </div>
     </form>

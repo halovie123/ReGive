@@ -1,13 +1,13 @@
 # Auth provider setup runbook
 
 How to configure the Supabase project that backs ReGive's sign-in flow
-(Google, Facebook, and phone/SMS OTP), and how that configuration maps to
+(Google and Facebook OAuth only), and how that configuration maps to
 this repo's environment variables. Companion doc:
 [`local-development.md`](./local-development.md) covers the rest of the
 local stack (Postgres, Redis, running the apps and tests).
 
 All values below are examples — never commit a real anon key, service-role
-key, OAuth client secret, or SMS provider credential. Only
+key, or OAuth client secret. Only
 `apps/api/.env.example` and `apps/web/.env.example` (placeholder values) are
 checked into git; real values live in untracked `.env` / `.env.local` files.
 
@@ -22,10 +22,10 @@ under **Project Settings → API**:
   (web). Example: `https://abcdefghijklmnop.supabase.co`.
 - **anon public key** → `SUPABASE_ANON_KEY` (API) and
   `NEXT_PUBLIC_SUPABASE_ANON_KEY` (web).
-- **service_role secret key** → `SUPABASE_SERVICE_ROLE_KEY` (API only —
-  never send this to the browser/web app). It is what
-  `SupabaseUserAdmin` (`apps/api/src/modules/identity/supabase-user-admin.ts`)
-  uses to read a user's confirmed phone number.
+- **service_role secret key** — not needed. The API verifies JWTs against
+  the public JWKS and holds no privileged Supabase credential. It was
+  required only by the phone/OTP sign-in path, which has been removed. Do
+  not put a service_role key in any environment for this project.
 
 Derive `SUPABASE_JWKS_URL` from the project URL:
 
@@ -88,29 +88,17 @@ route fails and the user is redirected back to `/login?error=...`.
 3. Copy the app's **App ID** and **App Secret** into the Supabase Facebook
    provider settings and toggle it **enabled**.
 
-## 5. Enable the phone (SMS OTP) provider
+## 5. Keep the phone provider disabled
 
-**Authentication → Providers → Phone**:
+**Authentication → Providers → Phone** must stay **off**.
 
-1. Toggle **Enable phone provider**.
-2. Choose an SMS gateway (Twilio, MessageBird, Vonage, or Supabase's
-   built-in test provider for development) and enter its credentials
-   (account SID/API key, auth token, and the sending phone number/sender
-   ID) in the Supabase dashboard.
-3. Review the **SMS OTP message template** — the web app sends and
-   verifies OTPs via `supabase.auth.signInWithOtp({ phone })` and
-   `supabase.auth.verifyOtp({ phone, token, type: 'sms' })`
-   (`apps/web/src/features/auth/auth-actions.ts`,
-   `apps/web/src/features/onboarding/onboarding-actions.ts`), and expects
-   the numeric code flow (not a magic link).
-4. Phone numbers are normalized to Vietnamese `+84` format client-side
-   before being sent (`apps/web/src/lib/phone.ts`) — no provider-side
-   country restriction is required, but confirm your SMS gateway supports
-   sending to Vietnamese numbers if testing with real devices.
-
-For local development without a paid SMS gateway, Supabase's dashboard
-offers a test-mode phone provider that accepts a fixed OTP code without
-sending a real SMS — sufficient for exercising the UI flow end to end.
+ReGive has no phone sign-in: the OTP flow, the `/onboarding/phone` step and
+every phone column were removed (migration
+`20260906000000_drop_phone_verification`). Nothing in the app calls
+`signInWithOtp`, so an enabled phone provider does nothing for users — but
+Supabase's auth endpoint would still accept OTP requests from anyone, and
+with a paid SMS gateway attached that is an open invitation to SMS-pumping
+fraud billed to your account. Do not buy or connect an SMS gateway.
 
 ## 6. Wire the values into this repo
 
@@ -123,30 +111,33 @@ files created from the `.env.example` templates (see
 | Project URL | `SUPABASE_URL` | `NEXT_PUBLIC_SUPABASE_URL` |
 | Project URL + `/auth/v1/.well-known/jwks.json` | `SUPABASE_JWKS_URL` | — |
 | anon public key | `SUPABASE_ANON_KEY` | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
-| service_role secret key | `SUPABASE_SERVICE_ROLE_KEY` | — (never expose to web) |
+| service_role secret key | — (not used by this project) | — (never expose to web) |
 
 `apps/web/.env.local` also needs `API_BASE_URL` pointing at the running API
 (default `http://127.0.0.1:3001/v1` for local dev — see
-`local-development.md` step 6), and optionally `NEXT_PUBLIC_SITE_URL` if
-your server-rendered OAuth redirect needs a fallback origin (normally it is
-derived from the incoming request's `Host` header instead — see
-`resolveOrigin()` in `apps/web/src/features/auth/auth-actions.ts`).
+`local-development.md` step 6). In production `API_BASE_URL` is required:
+the web app throws rather than fall back to localhost.
+
+Set `NEXT_PUBLIC_SITE_URL` to the deployed origin in production (e.g.
+`https://<your-domain>`). When set it is always used for the OAuth
+`redirectTo`; when unset (local dev, preview deploys) the origin comes from
+the request's `Host` header. `x-forwarded-host` is never trusted — see
+`resolveOrigin()` in `apps/web/src/features/auth/auth-actions.ts`.
 
 ## 7. Verify the flow
 
-1. `pnpm --filter api dev` and `pnpm --filter web dev` (see
-   `local-development.md`).
-2. Visit `http://127.0.0.1:3000/login` — it should offer Google, Facebook,
-   and phone number sign-in.
+1. `corepack pnpm --filter api dev` and `corepack pnpm --filter web dev`
+   (see `local-development.md`).
+2. Visit `http://127.0.0.1:3000/login` — it should offer exactly two
+   options: Google and Facebook.
 3. Complete one OAuth provider sign-in; you should land on
-   `/auth/callback`, then be redirected to `/onboarding/phone` (if the
-   provider didn't return a confirmed phone number) or straight to
-   `/trang-chu` (if onboarding is already complete).
-4. Complete a phone sign-in (request OTP, enter the code); the same
-   post-auth routing applies via `completeSignInRedirect()`.
+   `/auth/callback`, then be redirected by `completeSignInRedirect()` to
+   `/onboarding/profile` (first sign-in, no profile yet) or straight to
+   `/trang-chu` (profile already complete).
 
-`apps/web/e2e/onboarding.spec.ts` has three `test.fixme()` cases covering
-exactly this live-provider flow (OAuth phone gate, full onboarding
-completion, global sign-out) — they stay skipped in CI because they need
-real OAuth/SMS infra, but are the tests to un-skip and run manually against
-a configured project like this one when validating provider changes.
+`apps/web/e2e/onboarding.spec.ts` has two `test.fixme()` cases covering this
+live-provider flow (a completed profile reaches `/trang-chu`, global
+sign-out) — they stay skipped in CI because they need real OAuth infra plus
+a running API and database, but are the tests to un-skip and run manually
+(`RUN_E2E_LIVE_AUTH=true`) against a configured project like this one when
+validating provider changes.

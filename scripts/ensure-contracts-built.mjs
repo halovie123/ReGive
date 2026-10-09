@@ -42,8 +42,12 @@ const stampFile = path.join(distDir, '.build-stamp');
 const lockDir = path.join(contractsDir, '.build-lock');
 const tsconfigBuild = path.join(contractsDir, 'tsconfig.build.json');
 
+// STALE must stay below WAIT: a waiter only reclaims an abandoned lock if it
+// is still waiting when the lock turns stale. With stale > wait, a build
+// killed while holding the lock made the next run time out every time.
+// A real contracts compile takes seconds, so 120s cannot reclaim a live one.
 const LOCK_WAIT_TIMEOUT_MS = 180_000;
-const LOCK_STALE_AFTER_MS = 300_000;
+const LOCK_STALE_AFTER_MS = 120_000;
 const LOCK_POLL_MS = 100;
 
 const sleepSync = (ms) =>

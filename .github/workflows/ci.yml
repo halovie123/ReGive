@@ -35,18 +35,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Apply identity migrations to isolated CI database
+      # Supabase grants its Data API roles (anon, authenticated) ALL on every
+      # table migrations create. Recreate that here so the row-level-security
+      # suite checks migrations against production-like grants, not against a
+      # plain Postgres that is safer than production.
+      - name: Emulate Supabase's Data API roles
+        run: pnpm --filter api exec prisma db execute --file prisma/ci/emulate-supabase-roles.sql
+        env:
+          DATABASE_URL: postgresql://regive:regive@127.0.0.1:5432/regive_identity_ci
+      - name: Apply all migrations to isolated CI database
         run: pnpm --filter api exec prisma migrate deploy
         env:
           DATABASE_URL: postgresql://regive:regive@127.0.0.1:5432/regive_identity_ci
-      - name: Verify database-backed identity and profile invariants
+      - name: Verify database-backed identity, profile and row-level-security invariants
         run: pnpm --filter api test:e2e:db
         env:
           RUN_DATABASE_TESTS: "true"
@@ -75,5 +81,3 @@ jobs:
           SUPABASE_URL: https://smoke.example.supabase.co
           SUPABASE_JWKS_URL: https://smoke.example.supabase.co/auth/v1/.well-known/jwks.json
           SUPABASE_ANON_KEY: smoke-anon-key
-          SUPABASE_SERVICE_ROLE_KEY: smoke-service-role-key
-          PII_ENCRYPTION_KEY_V1: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=

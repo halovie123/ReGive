@@ -1,5 +1,6 @@
 {
   "rootDir": "../../..",
+  "roots": ["<rootDir>/apps/api/test"],
   "moduleFileExtensions": ["js", "json", "ts"],
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",

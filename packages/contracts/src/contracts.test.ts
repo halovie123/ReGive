@@ -113,8 +113,6 @@ describe('shared contracts', () => {
     expect(
       MeResponseSchema.parse({
         id: '6d29e5a2-12b9-4e91-9d2e-06a4b6d63915',
-        phoneVerified: false,
-        phoneLast4: null,
         profile: {
           displayName: 'Linh',
           bio: 'Chia sẻ đồ dùng',
@@ -126,8 +124,6 @@ describe('shared contracts', () => {
       }),
     ).toEqual({
       id: '6d29e5a2-12b9-4e91-9d2e-06a4b6d63915',
-      phoneVerified: false,
-      phoneLast4: null,
       profile: {
         displayName: 'Linh',
         bio: 'Chia sẻ đồ dùng',

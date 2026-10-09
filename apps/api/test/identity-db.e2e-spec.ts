@@ -10,8 +10,6 @@ import { PrismaService } from '../src/common/prisma/prisma.service';
 import { IdentityModule } from '../src/modules/identity/identity.module';
 import { IdentityVerifier } from '../src/modules/identity/identity-verifier';
 import { JwtAuthGuard } from '../src/modules/identity/jwt-auth.guard';
-import { SupabaseUserAdmin } from '../src/modules/identity/supabase-user-admin';
-import { VerifiedPhoneGuard } from '../src/modules/identity/verified-phone.guard';
 
 const runDatabaseTests = process.env.RUN_DATABASE_TESTS === 'true';
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -35,7 +33,7 @@ const assertIsolatedTestDatabase = (databaseUrl: string): void => {
 @Controller('database-community-probe')
 class DatabaseCommunityProbeController {
   @Get()
-  @UseGuards(JwtAuthGuard, VerifiedPhoneGuard)
+  @UseGuards(JwtAuthGuard)
   probe(): { allowed: true } {
     return { allowed: true };
   }
@@ -60,8 +58,6 @@ describeDatabase('Identity provisioning with PostgreSQL (e2e)', () => {
               SUPABASE_JWKS_URL:
                 'https://unused.supabase.co/auth/v1/.well-known/jwks.json',
               SUPABASE_ANON_KEY: 'test-anon-key',
-              SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
-              PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 11).toString('base64'),
             }),
           ],
         }),
@@ -75,15 +71,6 @@ describeDatabase('Identity provisioning with PostgreSQL (e2e)', () => {
           Promise.resolve({
             subject: providerSubject,
             sessionId: `session-${providerSubject}`,
-          }),
-      })
-      .overrideProvider(SupabaseUserAdmin)
-      .useValue({
-        getUser: () =>
-          Promise.resolve({
-            subject: providerSubject,
-            phone: '+84 912-345-678',
-            phoneConfirmedAt: new Date('2026-08-04T10:00:00.000Z'),
           }),
       })
       .compile();
@@ -102,35 +89,23 @@ describeDatabase('Identity provisioning with PostgreSQL (e2e)', () => {
     await app?.close();
   });
 
-  it('provisions one persisted user and unlocks verified-phone access', async () => {
+  /**
+   * The same-subject-twice case against real PostgreSQL: the upsert must not
+   * create a second row. Community access is granted on the JWT alone —
+   * phone verification was removed, and a real OAuth account has no phone to
+   * verify, so any gate on one would deny this request forever.
+   */
+  it('provisions one persisted user and admits it to community routes', async () => {
     const authorization = { Authorization: 'Bearer database-test-token' };
-
-    await request(app!.getHttpServer())
-      .get('/v1/database-community-probe')
-      .set(authorization)
-      .expect(403)
-      .expect(({ body }) => {
-        expect(body).toMatchObject({ code: 'PHONE_NOT_VERIFIED' });
-      });
-
-    const synced = await request(app!.getHttpServer())
-      .post('/v1/identity/sync-phone')
-      .set(authorization)
-      .expect(201);
-    expect(synced.body).toEqual({
-      phoneVerified: true,
-      phoneLast4: '5678',
-    });
-    expect(JSON.stringify(synced.body)).not.toContain('+84912345678');
 
     await request(app!.getHttpServer())
       .get('/v1/database-community-probe')
       .set(authorization)
       .expect(200, { allowed: true });
     await request(app!.getHttpServer())
-      .post('/v1/identity/sync-phone')
+      .get('/v1/database-community-probe')
       .set(authorization)
-      .expect(201);
+      .expect(200, { allowed: true });
 
     await expect(
       prisma!.user.count({ where: { providerSubject } }),

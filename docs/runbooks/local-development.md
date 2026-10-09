@@ -3,7 +3,7 @@
 How to bring up ReGive's foundation (monorepo, database, cache, API, web) on a
 fresh machine and run every layer of the test suite. Companion doc:
 [`auth-provider-setup.md`](./auth-provider-setup.md) covers configuring the
-Supabase project itself (redirect URLs, OAuth/phone providers).
+Supabase project itself (redirect URLs, OAuth providers).
 
 ## 1. Prerequisites
 
@@ -69,27 +69,37 @@ cp apps/web/.env.example apps/web/.env.local
 
 - `apps/api/.env` — see the comments in `apps/api/.env.example` for each
   key. The `DATABASE_URL` and `REDIS_URL` defaults already match step 3
-  above. `SUPABASE_URL`, `SUPABASE_JWKS_URL`, `SUPABASE_ANON_KEY`, and
-  `SUPABASE_SERVICE_ROLE_KEY` come from your Supabase project (see
-  `auth-provider-setup.md`). Generate a local `PII_ENCRYPTION_KEY_V1` with:
-  ```bash
-  openssl rand -base64 32
-  ```
+  above. `SUPABASE_URL`, `SUPABASE_JWKS_URL` and `SUPABASE_ANON_KEY` come
+  from your Supabase project (see `auth-provider-setup.md`). No
+  service-role key and no encryption key are required.
 - `apps/web/.env.local` — see `apps/web/.env.example`. Needs
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from the
   same Supabase project, plus `API_BASE_URL` (defaults to
   `http://127.0.0.1:3001/v1`, matching the API's default port below).
 
-Never commit `.env`, `.env.local`, or any file containing a real
-`SUPABASE_SERVICE_ROLE_KEY` — only the checked-in `.env.example` files
-(placeholder values only) belong in git.
+Never commit `.env`, `.env.local`, or any file containing real credentials
+— only the checked-in `.env.example` files (placeholder values only) belong
+in git. This is a public repository.
 
 ## 5. Apply database migrations
 
-There is no separate seed script: the four service areas (`HOC_MON`,
-`BA_DIEM`, `XUAN_THOI_SON`, `DONG_THANH`) are inserted by the migration SQL
-itself (`apps/api/prisma/migrations/20260804000000_identity_foundation/migration.sql:49-57`),
-so applying migrations is sufficient to get a usable dev database.
+There is no separate seed script: the 22 Ho Chi Minh City districts listed
+in `AREA_CODES` (`packages/contracts/src/enums.ts`) are inserted by the
+migration SQL itself, so applying migrations is sufficient to get a usable
+dev database. Four migrations exist and must all run, in order:
+
+1. `20260804000000_identity_foundation` — seeds the original four Hóc Môn
+   areas (`HOC_MON`, `BA_DIEM`, `XUAN_THOI_SON`, `DONG_THANH`).
+2. `20260805000000_profiles_roles_areas`.
+3. `20260905000000_expand_areas_to_hcmc` — folds the three commune areas
+   into `HOC_MON`, rebuilds the `area_code` enum and seeds all 22 districts
+   (`migration.sql:58-84`). Only after this one does the database match
+   `AREA_CODES`.
+4. `20260906000000_drop_phone_verification` — drops the four phone columns.
+
+A database that stopped after migration 1 or 2 still shows only the four
+Hóc Môn areas; if the area picker looks wrong, check
+`prisma migrate status` first.
 
 Apply migrations to your everyday dev database:
 
@@ -133,7 +143,7 @@ Sanity check: `curl http://127.0.0.1:3001/v1/health` should return
 | `pnpm test` | Every package's unit tests (root script fans out via `--recursive`) | No |
 | `pnpm --filter api test:e2e` | All infra-free API e2e specs, including the release gate (`foundation-gate.e2e-spec.ts`) — these use in-memory fakes instead of a real database, so they run without Docker | No |
 | `pnpm --filter api test:e2e:db` | The two database-backed e2e specs (`identity-db`, `profiles-db`) that verify real Postgres row-locking behavior | Yes — set `RUN_DATABASE_TESTS=true` and `TEST_DATABASE_URL` (see below) |
-| `pnpm --filter web test:e2e` | Playwright public-routing tests (Playwright starts its own `next dev` server automatically) | No — 3 live-auth tests are intentionally `test.fixme()`'d, pending real OAuth/OTP infra |
+| `pnpm --filter web test:e2e` | Playwright public-routing tests (Playwright starts its own `next dev` server automatically) | No — 2 live-auth tests are intentionally `test.fixme()`'d, pending real OAuth infra |
 
 Run the database-backed suite against the CI-mirror database created in
 step 3/5:
@@ -182,8 +192,5 @@ than once.
   required, `DATABASE_URL`/`REDIS_URL` must use the right protocol, and
   `SUPABASE_URL`/`SUPABASE_JWKS_URL` must be `https://` unless
   `ALLOW_INSECURE_SUPABASE_HTTP=true` and `NODE_ENV` is not `production`.
-- **`PII_ENCRYPTION_KEY_V1 must be base64 for exactly 32 bytes`**:
-  regenerate with `openssl rand -base64 32` — the value must decode to
-  exactly 32 bytes and round-trip back to the same base64 string.
 - **`pnpm: command not found`**: run `corepack enable` once, or prefix
   commands with `corepack pnpm` instead of `pnpm`.

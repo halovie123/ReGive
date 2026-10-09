@@ -12,10 +12,11 @@ type DatabaseClient = PrismaService | Prisma.TransactionClient;
  * which this package's unit-test jest config (rootDir: src) cannot
  * transform, and a value import here breaks the whole suite. The contract
  * is still the edge validation; these are the service's own backstop, and
- * the e2e suite exercises both together.
+ * the e2e suite exercises both together. test/area-limits.e2e-spec.ts fails
+ * if the two ever drift apart.
  */
-const MIN_AREAS = 1;
-const MAX_AREAS = 4;
+export const MIN_AREAS = 1;
+export const MAX_AREAS = 4;
 
 @Injectable()
 export class ProfilesService {
@@ -158,8 +159,6 @@ export class ProfilesService {
       where: { id: userId },
       select: {
         id: true,
-        phoneLast4: true,
-        phoneVerifiedAt: true,
         activeRole: true,
         profile: {
           select: { displayName: true, bio: true, avatarKey: true },
@@ -177,8 +176,6 @@ export class ProfilesService {
 
     return {
       id: user.id,
-      phoneVerified: user.phoneVerifiedAt !== null,
-      phoneLast4: user.phoneLast4,
       profile: user.profile,
       roles: user.roleAssignments.map(({ role }) => role),
       activeRole: user.activeRole,

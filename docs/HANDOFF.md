@@ -50,9 +50,9 @@ Mỗi mảng do một agent độc lập soi, có tấn công/đo đạc thật 
 
 ## 3. Bẫy quan trọng cần biết trước khi sửa gì
 
-1. **`VerifiedPhoneGuard` là bẫy khoá tài khoản.** Vì đã bỏ xác minh SĐT, không ai có thể có `phoneVerifiedAt`. Gắn guard này vào endpoint mới (rất dễ xảy ra khi xây chức năng đăng đồ) → **100% người dùng bị 403 vĩnh viễn**, và unit test vẫn xanh vì test tự set `phoneVerified: true`. Nên xoá guard hoặc thêm test khẳng định nó gắn vào 0 route.
+1. ~~**`VerifiedPhoneGuard` là bẫy khoá tài khoản.**~~ **ĐÃ XỬ LÝ (2026-09-06).** Toàn bộ đường phone đã bị xoá: guard, `POST /v1/identity/sync-phone`, `SupabaseUserAdmin`, `EncryptionService`, hai trường phone trong `MeResponse`, `phoneVerified` trong `CurrentUser`, và bốn cột phone trong DB (migration `20260906000000_drop_phone_verification`). Dựng lại cổng phone giờ **fail typecheck ngay** (`Property 'phoneVerified' does not exist on type 'CurrentUser'`).
 
-2. **Không rotate được khoá mã hoá PII.** Cột `phoneEncryptionKeyVersion` chỉ để trang trí — không code nào đọc. Đổi giá trị `PII_ENCRYPTION_KEY_V1` mà chưa mã hoá lại dữ liệu = **mất vĩnh viễn** mọi số điện thoại đã lưu, và không có lỗi nào báo vì hiện chưa nơi nào gọi `decrypt()`.
+2. ~~**Không rotate được khoá mã hoá PII.**~~ **KHÔNG CÒN ÁP DỤNG (2026-09-06).** `PII_ENCRYPTION_KEY_V1` và `SUPABASE_SERVICE_ROLE_KEY` đã gỡ khỏi `env.schema.ts` — API không còn giữ credential đặc quyền nào, chỉ verify JWT qua JWKS công khai. Không có dữ liệu mã hoá nào để mất.
 
 3. **Cột enum Postgres sort theo thứ tự KHAI BÁO, không phải bảng chữ cái.** Đã cắn 2 lần. Sau khi mở rộng 22 quận, `HOC_MON` ở vị trí 17 chứ không phải 0. Mọi assertion về thứ tự phải kiểm lại.
 
@@ -63,37 +63,37 @@ Mỗi mảng do một agent độc lập soi, có tấn công/đo đạc thật 
 ## 4. Việc còn lại, theo thứ tự khuyến nghị
 
 ### Bảo mật / vận hành
-- **Rotate `SUPABASE_SERVICE_ROLE_KEY` và mật khẩu database** định kỳ trong Supabase Dashboard, cập nhật lại biến môi trường trên Render. Đây là **repo công khai** — không bao giờ ghi giá trị bí mật thật vào bất kỳ file nào trong repo.
-- Thêm security header cho web (`next.config.ts` chưa có `headers()`): thiếu `X-Frame-Options`/CSP `frame-ancestors`, `nosniff`, `Referrer-Policy`. Trang đã đăng nhập có thể bị nhúng iframe → clickjacking vào nút đăng xuất và đổi vai trò.
-- `/v1/health` trả `{status:'ok'}` cứng, không chạm DB → database chết vẫn báo khoẻ. Nên thêm `/v1/ready` có `SELECT 1`.
+- **Rotate `SUPABASE_SERVICE_ROLE_KEY` và mật khẩu database** trong Supabase Dashboard. Khoá service_role vẫn cấp quyền toàn bộ database dù API không còn dùng — rotate xong thì **xoá luôn `SUPABASE_SERVICE_ROLE_KEY` và `PII_ENCRYPTION_KEY_V1` khỏi biến môi trường Render**, không còn gì đọc chúng. Đây là **repo công khai** — không bao giờ ghi giá trị bí mật thật vào bất kỳ file nào trong repo.
+- ~~Thêm security header cho web (`next.config.ts` chưa có `headers()`): thiếu `X-Frame-Options`/CSP `frame-ancestors`, `nosniff`, `Referrer-Policy`. Trang đã đăng nhập có thể bị nhúng iframe → clickjacking vào nút đăng xuất và đổi vai trò.~~ **ĐÃ XỬ LÝ (2026-10-04)**: `next.config.ts` có `headers()` cho mọi route (`X-Frame-Options`, CSP `frame-ancestors`, `nosniff`, `Referrer-Policy`, HSTS, `Permissions-Policy`).
+- ~~`/v1/health` trả `{status:'ok'}` cứng, không chạm DB → database chết vẫn báo khoẻ. Nên thêm `/v1/ready` có `SELECT 1`.~~ **ĐÃ XỬ LÝ (2026-10-04)**: thêm `GET /v1/ready` chạy `SELECT 1`.
 
 ### Tài liệu sai
-- `docs/runbooks/auth-provider-setup.md` vẫn hướng dẫn mua SMS gateway (Twilio), trỏ tới `apps/web/src/lib/phone.ts` (file đã xoá) và route `/onboarding/phone` (đã xoá). **Nguy hiểm thật**: người sau sẽ mua gateway vô ích và bật provider SMS → thành mục tiêu SMS-pumping.
-- `docs/runbooks/local-development.md:89-91` vẫn ghi 4 khu vực Hóc Môn, chưa nhắc migration thứ 3.
+- ~~`docs/runbooks/auth-provider-setup.md` vẫn hướng dẫn mua SMS gateway (Twilio), trỏ tới `apps/web/src/lib/phone.ts` (file đã xoá) và route `/onboarding/phone` (đã xoá). **Nguy hiểm thật**: người sau sẽ mua gateway vô ích và bật provider SMS → thành mục tiêu SMS-pumping.~~ **ĐÃ XỬ LÝ (2026-10-04)**: mục 5 giờ là "Keep the phone provider disabled".
+- ~~`docs/runbooks/local-development.md:89-91` vẫn ghi 4 khu vực Hóc Môn, chưa nhắc migration thứ 3.~~ **ĐÃ XỬ LÝ (2026-10-04)**: liệt kê đủ 4 migration.
 
 ### Cần bạn (chủ sản phẩm) quyết, không phải lỗi kỹ thuật
 - **Tagline "Giving Sharing Sustaining" đang là tiếng Anh** trên một sản phẩm thuần Việt (`brand-lockup.tsx`), và nằm cả trong `aria-label` nên screen reader tiếng Việt đọc phải một cụm tiếng Anh ở mọi trang. Tôi **cố ý không tự đổi**: đó là tagline trong file logo bạn đã duyệt, đổi là đổi nhận diện thương hiệu — quyết định của bạn, không phải của tôi. Nếu muốn Việt hoá, cần sửa cả phần chữ hiển thị lẫn `aria-label`.
-- **Vai trò của `POST /v1/identity/sync-phone`**: endpoint vẫn sống và gọi được (chỉ sau `JwtAuthGuard`), thực hiện mã hoá + gọi Supabase Admin API, nhưng **không luồng nào trong sản phẩm hiện tại gọi tới được** vì đã bỏ xác minh SĐT. Giữ lại để sau này bật lại, hay xoá bớt bề mặt tấn công? Cần bạn xác nhận.
+- ~~**Vai trò của `POST /v1/identity/sync-phone`**: endpoint vẫn sống và gọi được (chỉ sau `JwtAuthGuard`), thực hiện mã hoá + gọi Supabase Admin API, nhưng **không luồng nào trong sản phẩm hiện tại gọi tới được** vì đã bỏ xác minh SĐT. Giữ lại để sau này bật lại, hay xoá bớt bề mặt tấn công? Cần bạn xác nhận.~~ **ĐÃ XỬ LÝ (2026-10-04)**: endpoint đã bị xoá cùng toàn bộ đường phone (xem §3).
 
 ### Bảo mật mức thấp (chưa khai thác được, nên siết cho chắc)
-- `resolveOrigin()` trong `apps/web/src/features/auth/auth-actions.ts:9-15` tin header `x-forwarded-host` để dựng `redirectTo` của OAuth. Hai agent độc lập cùng nêu. **Chưa khai thác được** vì Vercel ghi đè header này ở edge, Server Action của Next có kiểm tra Origin, và Supabase có allowlist redirect — nhưng allowlist của Supabase đang là lớp bảo vệ **duy nhất**. Nên ưu tiên `NEXT_PUBLIC_SITE_URL` thay vì tin header.
+- ~~`resolveOrigin()` trong `apps/web/src/features/auth/auth-actions.ts:9-15` tin header `x-forwarded-host` để dựng `redirectTo` của OAuth. Hai agent độc lập cùng nêu. **Chưa khai thác được** vì Vercel ghi đè header này ở edge, Server Action của Next có kiểm tra Origin, và Supabase có allowlist redirect — nhưng allowlist của Supabase đang là lớp bảo vệ **duy nhất**. Nên ưu tiên `NEXT_PUBLIC_SITE_URL` thay vì tin header.~~ **ĐÃ XỬ LÝ (2026-10-04)**: `NEXT_PUBLIC_SITE_URL` thắng, không bao giờ đọc `x-forwarded-host`.
 - **Access token vẫn sống tới khi hết hạn (~1h) sau khi "đăng xuất mọi thiết bị"**. `signOutEverywhere` thu hồi refresh token, nhưng API chỉ kiểm chữ ký/issuer/audience/hạn dùng, không đối chiếu `session_id` với Supabase. Đây là bản chất của JWT không trạng thái, không phải lỗi — nhưng cần biết: token bị lộ không thể huỷ giữa chừng.
 - `NODE_ENV` chỉ có tác dụng ở đúng một chỗ (chặn `ALLOW_INSECURE_SUPABASE_HTTP` ở production), và CI đặt `NODE_ENV: development` nên nhánh production của kiểm tra đó **chưa bao giờ được chạy thật**. Nên set `NODE_ENV=production` rõ ràng trên Render thay vì tin mặc định của nền tảng.
 
 ### Chất lượng
-- **Lỗ hổng test còn lại**: đổi `orderBy` từ `asc` sang `desc` trong `profiles.service.ts` không làm đỏ một test nào (89/89 vẫn xanh) — vì mọi tầng test đều sort lại trước khi so sánh, do contract cố tình không cam kết thứ tự. Nhưng `/bao-mat` đang hiển thị `me.areas.join(', ')` thẳng cho người dùng. Nên thêm 1 test chạy trên Postgres thật khoá lại thứ tự enum thực tế (ví dụ `QUAN_8` vs `QUAN_10` — nơi thứ tự khai báo và bảng chữ cái khác nhau).
-- `(app)/loading.tsx` và `(app)/error.tsx` chưa có test nào. Cả hai đều đơn giản, không có nhánh logic, nên đây là thiếu sót nhỏ — nhưng đúng loại thứ mà ảnh chụp bắt được còn unit test thì không.
-- `MIN_AREAS`/`MAX_AREAS` bị khai báo trùng ở 2 nơi (`packages/contracts/src/profile.ts` và `apps/api/src/modules/profiles/profiles.service.ts`, xem lý do ở mục 5) mà **không có test nào khẳng định chúng khớp nhau**. Nếu đổi một bên quên bên kia, không có gì báo.
+- ~~**Lỗ hổng test còn lại**: đổi `orderBy` từ `asc` sang `desc` trong `profiles.service.ts` không làm đỏ một test nào (89/89 vẫn xanh) — vì mọi tầng test đều sort lại trước khi so sánh, do contract cố tình không cam kết thứ tự. Nhưng `/bao-mat` đang hiển thị `me.areas.join(', ')` thẳng cho người dùng. Nên thêm 1 test chạy trên Postgres thật khoá lại thứ tự enum thực tế (ví dụ `QUAN_8` vs `QUAN_10` — nơi thứ tự khai báo và bảng chữ cái khác nhau).~~ **ĐÃ XỬ LÝ (2026-10-04)**: test Postgres thật trong `profiles-db.e2e-spec.ts` khoá thứ tự enum.
+- ~~`(app)/loading.tsx` và `(app)/error.tsx` chưa có test nào. Cả hai đều đơn giản, không có nhánh logic, nên đây là thiếu sót nhỏ — nhưng đúng loại thứ mà ảnh chụp bắt được còn unit test thì không.~~ **ĐÃ XỬ LÝ (2026-10-04)**: `tests/home/app-shell-states.test.tsx`.
+- ~~`MIN_AREAS`/`MAX_AREAS` bị khai báo trùng ở 2 nơi (`packages/contracts/src/profile.ts` và `apps/api/src/modules/profiles/profiles.service.ts`, xem lý do ở mục 5) mà **không có test nào khẳng định chúng khớp nhau**. Nếu đổi một bên quên bên kia, không có gì báo.~~ **ĐÃ XỬ LÝ (2026-10-04)**: `test/area-limits.e2e-spec.ts` đối chiếu hai bên.
 
 ### Rác còn sót từ scaffold
-- `GET /v1/` vẫn trả `"Hello World!"` (`apps/api/src/app.controller.ts`), và `app.controller.spec.ts` đang test đúng cái đó — test không sai, nhưng nó bảo vệ một endpoint vô nghĩa.
-- `apps/api/README.md` vẫn là README mặc định của NestJS.
-- `apps/web/public/` còn `next.svg`, `vercel.svg`, `file.svg`, `globe.svg`, `window.svg` — ảnh mẫu của Next, không dùng tới.
-- `scripts/ensure-contracts-built.mjs`: `LOCK_WAIT_TIMEOUT_MS` (180s) **nhỏ hơn** `LOCK_STALE_AFTER_MS` (300s) → build bị SIGKILL khi đang giữ lock sẽ làm lần build kế tiếp fail chắc chắn 1 lần. Đổi stale xuống 120s.
-- `API_BASE_URL` sai/thiếu sẽ fail âm thầm (fallback về localhost, `safeGetMe` nuốt lỗi). Nên throw khi thiếu ở production.
-- `onboarding-form.tsx`: mỗi lần đăng ký **thành công** đều tạo unhandled promise rejection (Next reject action promise khi redirect, react-hook-form ném lại). Người dùng không bị ảnh hưởng nhưng log lỗi sẽ có false positive ở đúng luồng thành công.
-- Chưa có `not-found.tsx`: người đã đăng nhập gõ URL sai thấy trang 404 tiếng Anh mặc định.
-- `x-powered-by: Express` còn lộ trên API.
+- ~~`GET /v1/` vẫn trả `"Hello World!"` (`apps/api/src/app.controller.ts`), và `app.controller.spec.ts` đang test đúng cái đó — test không sai, nhưng nó bảo vệ một endpoint vô nghĩa.~~ **ĐÃ XỬ LÝ (2026-10-04)**: đã xoá scaffold, `GET /v1` giờ 404.
+- ~~`apps/api/README.md` vẫn là README mặc định của NestJS.~~ **ĐÃ XỬ LÝ (2026-10-04)**: viết lại (cả `apps/web/README.md`).
+- ~~`apps/web/public/` còn `next.svg`, `vercel.svg`, `file.svg`, `globe.svg`, `window.svg` — ảnh mẫu của Next, không dùng tới.~~ **ĐÃ XỬ LÝ (2026-10-04)**: đã xoá.
+- ~~`scripts/ensure-contracts-built.mjs`: `LOCK_WAIT_TIMEOUT_MS` (180s) **nhỏ hơn** `LOCK_STALE_AFTER_MS` (300s) → build bị SIGKILL khi đang giữ lock sẽ làm lần build kế tiếp fail chắc chắn 1 lần. Đổi stale xuống 120s.~~ **ĐÃ XỬ LÝ (2026-10-04)**: stale giờ là 120s.
+- ~~`API_BASE_URL` sai/thiếu sẽ fail âm thầm (fallback về localhost, `safeGetMe` nuốt lỗi). Nên throw khi thiếu ở production.~~ **ĐÃ XỬ LÝ (2026-10-04)**: ném `ApiConfigurationError` ở production, `safeGetMe` không nuốt lỗi này.
+- ~~`onboarding-form.tsx`: mỗi lần đăng ký **thành công** đều tạo unhandled promise rejection (Next reject action promise khi redirect, react-hook-form ném lại). Người dùng không bị ảnh hưởng nhưng log lỗi sẽ có false positive ở đúng luồng thành công.~~ **ĐÃ XỬ LÝ (2026-10-04)**: gọi action trong `startTransition`.
+- ~~Chưa có `not-found.tsx`: người đã đăng nhập gõ URL sai thấy trang 404 tiếng Anh mặc định.~~ **ĐÃ XỬ LÝ (2026-10-04)**: có `src/app/not-found.tsx` tiếng Việt.
+- ~~`x-powered-by: Express` còn lộ trên API.~~ **ĐÃ XỬ LÝ (2026-10-04)**: `app.disable('x-powered-by')`, smoke test kiểm.
 
 ---
 
@@ -117,8 +117,8 @@ Mỗi mảng do một agent độc lập soi, có tấn công/đo đạc thật 
 | Bộ | Số lượng |
 |---|---|
 | contracts | 16 |
-| API unit | 76 |
-| API e2e (không cần DB) | 5 pass, 4 skip có chủ đích |
-| API e2e (cần DB thật) | 4 |
-| web unit | 53 |
+| API unit | 52 |
+| API e2e (không cần DB) | 14 pass, 5 skip (là các test cần DB) |
+| API e2e (cần DB thật) | 5 |
+| web unit | 73 |
 | web e2e (Playwright) | 13 pass, 2 fixme cần hạ tầng OAuth thật |

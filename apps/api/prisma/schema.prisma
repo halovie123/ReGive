@@ -49,20 +49,21 @@ enum AreaCode {
   @@map("area_code")
 }
 
+/// Sign-in is Google/Facebook OAuth only. The four phone columns
+/// (encrypted_phone, phone_last4, phone_verified_at,
+/// phone_encryption_key_version) were dropped by
+/// 20260906000000_drop_phone_verification once phone/OTP sign-in was
+/// removed; they had never held a value.
 model User {
-  id                        String           @id @default(uuid()) @db.Uuid
-  providerSubject           String           @unique @map("provider_subject")
-  encryptedPhone            String?          @map("encrypted_phone")
-  phoneLast4                String?          @map("phone_last4") @db.VarChar(4)
-  phoneVerifiedAt           DateTime?        @map("phone_verified_at") @db.Timestamptz(3)
-  phoneEncryptionKeyVersion Int?             @map("phone_encryption_key_version")
-  status                    UserStatus       @default(ACTIVE)
-  activeRole                AppRole?         @map("active_role")
-  createdAt                 DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                 DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
-  roleAssignments           RoleAssignment[]
-  profile                   Profile?
-  areaAssignments           UserArea[]
+  id              String           @id @default(uuid()) @db.Uuid
+  providerSubject String           @unique @map("provider_subject")
+  status          UserStatus       @default(ACTIVE)
+  activeRole      AppRole?         @map("active_role")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  roleAssignments RoleAssignment[]
+  profile         Profile?
+  areaAssignments UserArea[]
 
   @@index([status])
   @@map("users")

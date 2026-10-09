@@ -15,8 +15,6 @@ import { ProfilesModule } from '../src/modules/profiles/profiles.module';
 type StoredUser = {
   id: string;
   providerSubject: string;
-  phoneLast4: string | null;
-  phoneVerifiedAt: Date | null;
   status: UserStatus;
   activeRole: AppRole | null;
   profile: {
@@ -64,8 +62,6 @@ class MemoryFoundationDatabase {
       const created: StoredUser = {
         id: `user-${this.users.size + 1}`,
         providerSubject,
-        phoneLast4: null,
-        phoneVerifiedAt: null,
         status: 'ACTIVE',
         activeRole: null,
         profile: null,
@@ -180,8 +176,6 @@ class MemoryFoundationDatabase {
   private serialize(user: StoredUser) {
     return {
       id: user.id,
-      phoneLast4: user.phoneLast4,
-      phoneVerifiedAt: user.phoneVerifiedAt,
       activeRole: user.activeRole,
       profile: user.profile,
       roleAssignments: [...user.roles].sort().map((role) => ({ role })),
@@ -207,8 +201,6 @@ describe('Foundation identity release gate (e2e)', () => {
               SUPABASE_URL: 'https://unused.supabase.co',
               SUPABASE_JWKS_URL:
                 'https://unused.supabase.co/auth/v1/.well-known/jwks.json',
-              SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
-              PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 6).toString('base64'),
             }),
           ],
         }),
@@ -253,8 +245,6 @@ describe('Foundation identity release gate (e2e)', () => {
       .set(authorization)
       .expect(200);
     expect(provisioned.body).toMatchObject({
-      phoneVerified: false,
-      phoneLast4: null,
       profile: null,
       roles: [],
       activeRole: null,
@@ -306,8 +296,6 @@ describe('Foundation identity release gate (e2e)', () => {
       areas: [...me.areas].sort(),
     }).toEqual({
       id: userId,
-      phoneVerified: false,
-      phoneLast4: null,
       profile: {
         displayName: 'Nguyễn Thị Lan',
         bio: 'Thích chia sẻ đồ dùng cho hàng xóm ở Hóc Môn.',

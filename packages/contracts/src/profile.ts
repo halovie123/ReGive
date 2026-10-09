@@ -26,10 +26,13 @@ export const UpdateAreasSchema = z.object({
   areas: z.array(AreaCodeSchema).min(MIN_AREAS).max(MAX_AREAS),
 });
 
+/**
+ * Carried `phoneVerified` and `phoneLast4` until phone sign-in was removed
+ * (no paid SMS gateway). Both are gone rather than pinned to false/null so
+ * no caller can build a gate on a field that can never become true.
+ */
 export const MeResponseSchema = z.object({
   id: z.string().min(1),
-  phoneVerified: z.boolean(),
-  phoneLast4: z.string().length(4).nullable(),
   profile: z
     .object({
       displayName: z.string(),

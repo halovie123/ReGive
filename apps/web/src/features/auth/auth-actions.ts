@@ -6,12 +6,22 @@ import { safeGetMe } from '@/lib/api/server-fetch';
 import { nextOnboardingStep } from '@/lib/onboarding-step';
 import { createClient } from '@/lib/supabase/server';
 
+/**
+ * Origin for the OAuth redirectTo. The configured site URL wins; the
+ * request is only consulted when it is unset (local dev, preview deploys).
+ * x-forwarded-host is never read: it is client-controlled wherever a proxy
+ * does not overwrite it, and trusting it left Supabase's redirect
+ * allowlist as the only thing keeping the OAuth code on our origin.
+ */
 async function resolveOrigin(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configured) return configured.replace(/\/$/, '');
+
   const headerList = await headers();
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host');
+  const host = headerList.get('host');
   const protocol = headerList.get('x-forwarded-proto') ?? 'https';
   if (host) return `${protocol}://${host}`;
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://127.0.0.1:3000';
+  return 'http://127.0.0.1:3000';
 }
 
 async function startOAuthSignIn(provider: 'google' | 'facebook'): Promise<never> {

@@ -67,8 +67,6 @@ describeDatabase('Profile mutation concurrency with PostgreSQL (e2e)', () => {
               SUPABASE_JWKS_URL:
                 'https://unused.supabase.co/auth/v1/.well-known/jwks.json',
               SUPABASE_ANON_KEY: 'test-anon-key',
-              SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
-              PII_ENCRYPTION_KEY_V1: Buffer.alloc(32, 13).toString('base64'),
             }),
           ],
         }),
@@ -201,5 +199,26 @@ describeDatabase('Profile mutation concurrency with PostgreSQL (e2e)', () => {
         select: { areaCode: true },
       }),
     ).resolves.toEqual([{ areaCode: 'QUAN_7' }]);
+  });
+
+  /**
+   * /bao-mat renders me.areas.join(', ') straight to the member, yet every
+   * other test sorts before comparing — flipping orderBy to 'desc' left the
+   * whole suite green. The chosen set makes declaration order (QUAN_8 before
+   * QUAN_10, districts before HOC_MON) differ from input order, alphabetical
+   * order and reversed order, so only the real enum ordering passes.
+   */
+  it('returns areas in district declaration order, not alphabetical', async () => {
+    const expected = ['QUAN_8', 'QUAN_10', 'HOC_MON'];
+
+    const updated = await profiles!.updateAreas(userId!, [
+      'HOC_MON',
+      'QUAN_10',
+      'QUAN_8',
+    ]);
+    expect(updated.areas).toEqual(expected);
+    await expect(profiles!.getMe(userId!)).resolves.toMatchObject({
+      areas: expected,
+    });
   });
 });
